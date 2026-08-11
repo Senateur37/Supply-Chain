@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Inventaire | Supply Chain{% endblock %}
+{% block heading %}Inventaire{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Lignes de stock</div>
+        <div class="kpi-value">{{ nb_lignes_stock }}</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Stock total</div>
+        <div class="kpi-value">{{ stock_total|intcomma }}</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Mouvements</div>
+        <div class="kpi-value">{{ nb_mouvements }}</div>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <h3>Nouveau mouvement de stock</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Produit</label>
+                {{ form.produit }}
+            </div>
+            <div class="form-field">
+                <label>Entrepôt</label>
+                {{ form.entrepot }}
+            </div>
+            <div class="form-field">
+                <label>Type de mouvement</label>
+                {{ form.type_mouvement }}
+            </div>
+            <div class="form-field">
+                <label>Quantité</label>
+                {{ form.quantite }}
+                <div class="field-help">Positif pour entrée, négatif pour sortie</div>
+            </div>
+            <div class="form-field">
+                <label>Réf. document</label>
+                {{ form.reference_document }}
+            </div>
+            <div class="form-field is-full">
+                <label>Notes</label>
+                {{ form.notes }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer le mouvement</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Stocks par produit / entrepôt</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Produit</th><th>Référence</th><th>Entrepôt</th><th>Quantité</th></tr>
+            </thead>
+            <tbody>
+                {% for s in stocks %}
+                <tr>
+                    <td>{{ s.produit.designation }}</td>
+                    <td>{{ s.produit.reference }}</td>
+                    <td>{{ s.entrepot.nom }}</td>
+                    <td>{{ s.quantite_disponible }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="empty">Aucune ligne de stock.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Derniers mouvements de stock</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Date</th><th>Produit</th><th>Entrepôt</th><th>Type</th><th>Quantité</th></tr>
+            </thead>
+            <tbody>
+                {% for m in mouvements %}
+                <tr>
+                    <td>{{ m.date_mouvement|date:"d/m/Y H:i" }}</td>
+                    <td>{{ m.produit.designation }}</td>
+                    <td>{{ m.entrepot.nom }}</td>
+                    <td>
+                        {% if m.type_mouvement == 'ENTREE' %}<span class="badge success">Entrée</span>
+                        {% elif m.type_mouvement == 'SORTIE' %}<span class="badge danger">Sortie</span>
+                        {% else %}<span class="badge neutral">{{ m.get_type_mouvement_display }}</span>{% endif %}
+                    </td>
+                    <td>{{ m.quantite }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty">Aucun mouvement.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

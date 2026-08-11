@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Rapports | Supply Chain{% endblock %}
+{% block heading %}Rapports{% endblock %}
+
+{% block content %}
+<div class="print-toolbar">
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer le rapport</button>
+</div>
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Chiffre d'affaires</div>
+        <div class="kpi-value">{{ ca_ttc|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">FCFA TTC facturé</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Achats</div>
+        <div class="kpi-value">{{ achats_ttc|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">FCFA TTC</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Marge estimée</div>
+        <div class="kpi-value {% if marge < 0 %}kpi-negative{% endif %}">{{ marge|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">CA − Achats</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Factures impayées</div>
+        <div class="kpi-value">{{ nb_factures_impayees }}</div>
+        <div class="kpi-sub">factures de vente</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Commandes d'achat</h3>
+        <div class="mini-grid">
+            <div class="mini-box">
+                <div class="mini-label">Total</div>
+                <div class="mini-value">{{ nb_comm_achat }}</div>
+            </div>
+            <div class="mini-box mini-credit">
+                <div class="mini-label">En cours</div>
+                <div class="mini-value">{{ nb_comm_achat_en_cours }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Commandes de vente</h3>
+        <div class="mini-grid">
+            <div class="mini-box">
+                <div class="mini-label">Total</div>
+                <div class="mini-value">{{ nb_comm_vente }}</div>
+            </div>
+            <div class="mini-box mini-credit">
+                <div class="mini-label">En cours</div>
+                <div class="mini-value">{{ nb_comm_vente_en_cours }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Évolution mensuelle ventes / achats (FCFA TTC)</h3>
+    <div class="chart-wrap">
+        <canvas id="evolChart"></canvas>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Commandes d'achat par statut</h3>
+        <div class="chart-wrap">
+            <canvas id="cmdAchatChart"></canvas>
+        </div>
+    </div>
+    <div class="panel">
+        <h3>Commandes de vente par statut</h3>
+        <div class="chart-wrap">
+            <canvas id="cmdVenteChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Mouvements de stock</h3>
+        <div class="mini-grid">
+            <div class="mini-box mini-credit">
+                <div class="mini-label">Entrées</div>
+                <div class="mini-value">{{ entrees }}</div>
+            </div>
+            <div class="mini-box mini-debit">
+                <div class="mini-label">Sorties</div>
+                <div class="mini-value">{{ sorties }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Stock par entrepôt</h3>
+        <div class="chart-wrap">
+            <canvas id="stockEntrepotChart"></canvas>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Entrepôt</th><th>Références</th><th>Stock total</th></tr>
+                </thead>
+                <tbody>
+                    {% for e in stocks_par_entrepot %}
+                    <tr>
+                        <td>{{ e.nom }}</td>
+                        <td>{{ e.nb_references }}</td>
+                        <td>{{ e.stock_total|intcomma }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="empty">Aucun stock enregistré.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+const moisLabels = {{ mois_labels_json|safe }};
+const venteSeries = {{ vente_series_json|safe }};
+const achatSeries = {{ achat_series_json|safe }};
+
+new Chart(document.getElementById('evolChart'), {
+    type: 'line',
+    data: {
+        labels: moisLabels,
+        datasets: [
+            { label: 'Ventes', data: venteSeries, borderColor: '#0ea5a4', backgroundColor: 'rgba(14,165,164,.12)', fill: true, tension: .35 },
+            { label: 'Achats', data: achatSeries, borderColor: '#1b5dbf', backgroundColor: 'rgba(27,93,191,.10)', fill: true, tension: .35 }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: true } }
+    }
+});
+
+const ca = {{ commandes_achat_par_statut_j|safe }};
+new Chart(document.getElementById('cmdAchatChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ca.map(x => x.statut),
+        datasets: [{ data: ca.map(x => x.n), backgroundColor: ['#0ea5a4','#1b5dbf','#b54708','#067647','#b42318','#6b7a90'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+const cv = {{ commandes_vente_par_statut_j|safe }};
+new Chart(document.getElementById('cmdVenteChart'), {
+    type: 'doughnut',
+    data: {
+        labels: cv.map(x => x.statut),
+        datasets: [{ data: cv.map(x => x.n), backgroundColor: ['#0ea5a4','#1b5dbf','#b54708','#067647','#b42318','#6b7a90'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+new Chart(document.getElementById('stockEntrepotChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ entrepot_labels_json|safe }},
+        datasets: [{ label: 'Stock total', data: {{ entrepot_stocks_json|safe }}, backgroundColor: '#1b5dbf' }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}

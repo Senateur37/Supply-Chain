@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Dashboard | Supply Chain{% endblock %}
+{% block heading %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Produits</div>
+        <div class="kpi-value">{{ nb_produits }}</div>
+        <div class="kpi-sub">références enregistrées</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Entrepôts</div>
+        <div class="kpi-value">{{ nb_entrepots }}</div>
+        <div class="kpi-sub">sites de stockage</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Stock total (unités)</div>
+        <div class="kpi-value">{{ stock_total|intcomma }}</div>
+        <div class="kpi-sub">toutes références confondues</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Chiffre d'affaires</div>
+        <div class="kpi-value">{{ ca_ttc|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">FCFA TTC facturé</div>
+    </div>
+</div>
+
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Fournisseurs</div>
+        <div class="kpi-value">{{ nb_fournisseurs }}</div>
+        <div class="kpi-sub">achats</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Commandes achat</div>
+        <div class="kpi-value">{{ nb_commandes_achat }}</div>
+        <div class="kpi-sub">commandes émises</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Clients</div>
+        <div class="kpi-value">{{ nb_clients }}</div>
+        <div class="kpi-sub">ventes</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Commandes vente</div>
+        <div class="kpi-value">{{ nb_commandes_vente }}</div>
+        <div class="kpi-sub">commandes reçues</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Alertes de stock bas</h3>
+        {% if alertes %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Produit</th><th>Stock</th><th>Seuil</th><th>Statut</th></tr>
+                </thead>
+                <tbody>
+                    {% for a in alertes %}
+                    <tr>
+                        <td>{{ a.produit.reference }} — {{ a.produit.designation }}</td>
+                        <td>{{ a.quantite }}</td>
+                        <td>{{ a.produit.stock_minimum }}</td>
+                        <td><span class="badge danger">Faible</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">Aucun produit sous le seuil minimum. ✓</div>
+        {% endif %}
+    </div>
+
+    <div class="panel">
+        <h3>Derniers mouvements de stock</h3>
+        {% if mouvements %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Produit</th><th>Type</th><th>Qté</th></tr>
+                </thead>
+                <tbody>
+                    {% for m in mouvements %}
+                    <tr>
+                        <td>{{ m.date_mouvement|date:"d/m/Y H:i" }}</td>
+                        <td>{{ m.produit.designation }}</td>
+                        <td>
+                            {% if m.type_mouvement == 'ENTREE' %}<span class="badge success">Entrée</span>
+                            {% elif m.type_mouvement == 'SORTIE' %}<span class="badge danger">Sortie</span>
+                            {% else %}<span class="badge neutral">{{ m.get_type_mouvement_display }}</span>{% endif %}
+                        </td>
+                        <td>{{ m.quantite }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">Aucun mouvement enregistré.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

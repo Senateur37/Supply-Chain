@@ -1,0 +1,29 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('produits/', views.produits_view, name='produits'),
+    path('entrepots/', views.entrepots_view, name='entrepots'),
+    path('achats/', views.achats_view, name='achats'),
+    path('inventaire/', views.inventaire_view, name='inventaire'),
+    path('ventes/', views.ventes_view, name='ventes'),
+    path('comptable/', views.comptable_view, name='comptable'),
+    path('rapports/', views.rapports_view, name='rapports'),
+    path('statistiques/', views.statistiques_view, name='statistiques'),
+    path('comptable/facture-achat/<int:pk>/payer/', views.facture_achat_payee, name='facture_achat_payer'),
+    path('comptable/facture-vente/<int:pk>/payer/', views.facture_vente_payee, name='facture_vente_payer'),
+    path('comptable/facture-vente/<int:pk>/annuler/', views.facture_vente_annuler, name='facture_vente_annuler'),
+    path('comptable/facture-achat/<int:pk>/imprimer/', views.facture_achat_imprimer, name='facture_achat_imprimer'),
+    path('comptable/facture-vente/<int:pk>/imprimer/', views.facture_vente_imprimer, name='facture_vente_imprimer'),
+    path('produits/<int:pk>/modifier/', views.produit_edit, name='produit_edit'),
+    path('produits/<int:pk>/supprimer/', views.produit_delete, name='produit_delete'),
+    path('entrepots/<int:pk>/modifier/', views.entrepot_edit, name='entrepot_edit'),
+    path('entrepots/<int:pk>/supprimer/', views.entrepot_delete, name='entrepot_delete'),
+    path('achats/fournisseurs/<int:pk>/modifier/', views.fournisseur_edit, name='fournisseur_edit'),
+    path('achats/fournisseurs/<int:pk>/supprimer/', views.fournisseur_delete, name='fournisseur_delete'),
+    path('ventes/clients/<int:pk>/modifier/', views.client_edit, name='client_edit'),
+    path('ventes/clients/<int:pk>/supprimer/', views.client_delete, name='client_delete'),
+    path('parametres/', views.parametres_view, name='parametres'),
+    path('profil/', views.profil_view, name='profil'),
+]

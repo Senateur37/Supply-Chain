@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Produits | Supply Chain{% endblock %}
+{% block heading %}Produits{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Total produits</div>
+        <div class="kpi-value">{{ nb_produits }}</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Actifs</div>
+        <div class="kpi-value">{{ nb_actifs }}</div>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <h3>{% if edit_instance %}Modifier le produit : {{ edit_instance.reference }}{% else %}Ajouter un produit{% endif %}</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Référence</label>
+                {{ form.reference }}
+                {% if form.reference.errors %}<div class="field-error">{{ form.reference.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label>Désignation</label>
+                {{ form.designation }}
+                {% if form.designation.errors %}<div class="field-error">{{ form.designation.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label>Prix unitaire (FCFA)</label>
+                {{ form.prix_unitaire }}
+                {% if form.prix_unitaire.errors %}<div class="field-error">{{ form.prix_unitaire.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label>Unité de mesure</label>
+                {{ form.unite_mesure }}
+            </div>
+            <div class="form-field">
+                <label>Stock minimum</label>
+                {{ form.stock_minimum }}
+            </div>
+            <div class="form-field is-full">
+                <label>Description</label>
+                {{ form.description }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer le produit</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Liste des produits</h3>
+    <div class="table-wrap">
+        <table>
+<thead>
+                <tr>
+                    <th>Référence</th>
+                    <th>Désignation</th>
+                    <th>Prix unitaire</th>
+                    <th>Unité</th>
+                    <th>Stock min.</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in produits %}
+                <tr>
+                    <td>{{ p.reference }}</td>
+                    <td>{{ p.designation }}</td>
+                    <td>{{ p.prix_unitaire|floatformat:2 }} FCFA</td>
+                    <td>{{ p.get_unite_mesure_display }}</td>
+                    <td>{{ p.stock_minimum }}</td>
+                    <td>
+                        {% if p.actif %}<span class="badge success">Actif</span>
+                        {% else %}<span class="badge neutral">Inactif</span>{% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'produit_edit' p.pk %}" class="btn btn-outline btn-sm">Modifier</a>
+                        <form method="post" action="{% url 'produit_delete' p.pk %}" class="inline-form" onsubmit="return confirm('Supprimer ce produit ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty">Aucun produit enregistré.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

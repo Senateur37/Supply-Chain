@@ -1,0 +1,144 @@
+{% extends 'base.html' %}
+{% block title %}Paramètres | Supply Chain{% endblock %}
+{% block heading %}Paramètres{% endblock %}
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+    <div class="alert {% if message.tags == 'success' %}success{% else %}warning{% endif %}">{{ message }}</div>
+    {% endfor %}
+{% endif %}
+
+<div class="panel">
+    <h3>Paramètres de l'application</h3>
+    <form method="post" enctype="multipart/form-data" class="param-form">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <div class="alert warning">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.nom_entreprise.id_for_label }}">Nom de l'entreprise</label>
+                {{ form.nom_entreprise }}
+                {{ form.nom_entreprise.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.slogan.id_for_label }}">Slogan / sous-titre</label>
+                {{ form.slogan }}
+                {{ form.slogan.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.logo.id_for_label }}">Logo</label>
+                {{ form.logo }}
+                {{ form.logo.errors }}
+                {% if instance.logo %}
+                    <p class="form-hint">Logo actuel : <img src="{{ instance.logo.url }}" alt="Logo" class="logo-preview"></p>
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.email_contact.id_for_label }}">Email de contact</label>
+                {{ form.email_contact }}
+                {{ form.email_contact.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.telephone.id_for_label }}">Téléphone</label>
+                {{ form.telephone }}
+                {{ form.telephone.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.devise.id_for_label }}">Devise</label>
+                {{ form.devise }}
+                {{ form.devise.errors }}
+            </div>
+            <div class="form-group form-group-full">
+                <label for="{{ form.adresse.id_for_label }}">Adresse</label>
+                {{ form.adresse }}
+                {{ form.adresse.errors }}
+            </div>
+<div class="form-group form-group-full">
+                <label for="{{ form.pied_de_page.id_for_label }}">Pied de page des documents</label>
+                {{ form.pied_de_page }}
+                {{ form.pied_de_page.errors }}
+            </div>
+        </div>
+
+        <h3 class="section-title">Personnalisation du thème</h3>
+        <p class="form-hint">Choisissez les couleurs de l'application. La couleur principale est utilisée pour la barre latérale et les titres, la couleur d'accent pour le logo et les éléments clés.</p>
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="{{ form.couleur_principale.id_for_label }}">Couleur principale</label>
+                <div class="color-picker">
+                    {{ form.couleur_principale }}
+                    <span class="color-value" id="couleur-principale-value">{{ form.couleur_principale.value|default:'#14345B' }}</span>
+                </div>
+                {{ form.couleur_principale.errors }}
+            </div>
+            <div class="form-group">
+                <label for="{{ form.couleur_accent.id_for_label }}">Couleur d'accent</label>
+                <div class="color-picker">
+                    {{ form.couleur_accent }}
+                    <span class="color-value" id="couleur-accent-value">{{ form.couleur_accent.value|default:'#0EA5A4' }}</span>
+                </div>
+                {{ form.couleur_accent.errors }}
+            </div>
+            <div class="form-group form-group-full">
+                <label>Palette rapide</label>
+                <div class="palette">
+                    <button type="button" class="palette-swatch" style="background:#14345B" data-target="couleur_principale" data-color="#14345B" title="Bleu nuit"></button>
+                    <button type="button" class="palette-swatch" style="background:#0EA5A4" data-target="couleur_accent" data-color="#0EA5A4" title="Turquoise"></button>
+                    <button type="button" class="palette-swatch" style="background:#1B5DBF" data-target="couleur_principale" data-color="#1B5DBF" title="Bleu"></button>
+                    <button type="button" class="palette-swatch" style="background:#0F766E" data-target="couleur_accent" data-color="#0F766E" title="Vert sarcelle"></button>
+                    <button type="button" class="palette-swatch" style="background:#7C3AED" data-target="couleur_principale" data-color="#7C3AED" title="Violet"></button>
+                    <button type="button" class="palette-swatch" style="background:#DB2777" data-target="couleur_accent" data-color="#DB2777" title="Rose"></button>
+                    <button type="button" class="palette-swatch" style="background:#B45309" data-target="couleur_principale" data-color="#B45309" title="Ambre"></button>
+                    <button type="button" class="palette-swatch" style="background:#16A34A" data-target="couleur_accent" data-color="#16A34A" title="Vert"></button>
+                    <button type="button" class="palette-swatch" style="background:#DC2626" data-target="couleur_principale" data-color="#DC2626" title="Rouge"></button>
+                    <button type="button" class="palette-swatch" style="background:#2563EB" data-target="couleur_accent" data-color="#2563EB" title="Bleu vif"></button>
+                </div>
+            </div>
+        </div>
+
+<div class="form-actions">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    (function () {
+        function updateValue(id, color) {
+            var valueEl = document.getElementById(id);
+            if (valueEl) valueEl.textContent = color;
+        }
+        // Met à jour l'affichage quand l'utilisateur choisit une couleur via le sélecteur natif
+        document.querySelectorAll('input.color-input[type="color"]').forEach(function (input) {
+            input.addEventListener('input', function () {
+                var targetId = input.getAttribute('id');
+                if (targetId === 'id_couleur_principale') {
+                    updateValue('couleur-principale-value', input.value);
+                } else if (targetId === 'id_couleur_accent') {
+                    updateValue('couleur-accent-value', input.value);
+                }
+            });
+        });
+        // Palette rapide : clique sur une pastille
+        document.querySelectorAll('.palette-swatch').forEach(function (swatch) {
+            swatch.addEventListener('click', function () {
+                var target = swatch.getAttribute('data-target');
+                var color = swatch.getAttribute('data-color');
+                var input = document.getElementById('id_' + target);
+                if (input) {
+                    input.value = color;
+                    if (target === 'couleur_principale') {
+                        updateValue('couleur-principale-value', color);
+                    } else if (target === 'couleur_accent') {
+                        updateValue('couleur-accent-value', color);
+                    }
+                }
+            });
+        });
+    })();
+</script>
+{% endblock %}

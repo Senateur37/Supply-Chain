@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}Achats | Supply Chain{% endblock %}
+{% block heading %}Achats{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Fournisseurs</div>
+        <div class="kpi-value">{{ nb_fournisseurs }}</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Commandes</div>
+        <div class="kpi-value">{{ nb_commandes }}</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Commandes en attente</div>
+        <div class="kpi-value">{{ en_attente }}</div>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <h3>{% if edit_instance %}Modifier le fournisseur : {{ edit_instance.nom }}{% else %}Ajouter un fournisseur{% endif %}</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="fournisseur">
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Nom</label>
+                {{ fournisseur_form.nom }}
+                {% if fournisseur_form.nom.errors %}<div class="field-error">{{ fournisseur_form.nom.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label>Contact</label>
+                {{ fournisseur_form.contact }}
+            </div>
+            <div class="form-field">
+                <label>Email</label>
+                {{ fournisseur_form.email }}
+            </div>
+            <div class="form-field">
+                <label>Téléphone</label>
+                {{ fournisseur_form.telephone }}
+            </div>
+            <div class="form-field is-full">
+                <label>Adresse</label>
+                {{ fournisseur_form.adresse }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer le fournisseur</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel form-panel">
+    <h3>Nouvelle commande d'achat</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="commande">
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Référence</label>
+                {{ commande_form.reference }}
+                {% if commande_form.reference.errors %}<div class="field-error">{{ commande_form.reference.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label>Fournisseur</label>
+                {{ commande_form.fournisseur }}
+            </div>
+            <div class="form-field">
+                <label>Date commande</label>
+                {{ commande_form.date_commande }}
+            </div>
+            <div class="form-field">
+                <label>Livraison prévue</label>
+                {{ commande_form.date_livraison_prevue }}
+            </div>
+            <div class="form-field">
+                <label>Statut</label>
+                {{ commande_form.statut }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer la commande</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Fournisseurs</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Nom</th><th>Contact</th><th>Email</th><th>Téléphone</th><th>Statut</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for f in fournisseurs %}
+                <tr>
+                    <td>{{ f.nom }}</td>
+                    <td>{{ f.contact }}</td>
+                    <td>{{ f.email }}</td>
+                    <td>{{ f.telephone }}</td>
+                    <td>
+                        {% if f.actif %}<span class="badge success">Actif</span>
+                        {% else %}<span class="badge neutral">Inactif</span>{% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'fournisseur_edit' f.pk %}" class="btn btn-outline btn-sm">Modifier</a>
+                        <form method="post" action="{% url 'fournisseur_delete' f.pk %}" class="inline-form" onsubmit="return confirm('Supprimer ce fournisseur ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty">Aucun fournisseur.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Commandes d'achat</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Référence</th><th>Fournisseur</th><th>Date</th><th>Livraison prévue</th><th>Statut</th><th>Cté lignes</th></tr>
+            </thead>
+            <tbody>
+                {% for c in commandes %}
+                <tr>
+                    <td>{{ c.reference }}</td>
+                    <td>{{ c.fournisseur.nom }}</td>
+                    <td>{{ c.date_commande|date:"d/m/Y" }}</td>
+                    <td>{{ c.date_livraison_prevue|date:"d/m/Y"|default:"—" }}</td>
+                    <td>
+                        {% if c.statut == 'RECUE' %}<span class="badge success">{{ c.get_statut_display }}</span>
+                        {% elif c.statut == 'ANNULEE' %}<span class="badge danger">{{ c.get_statut_display }}</span>
+                        {% elif c.statut == 'BROUILLON' %}<span class="badge neutral">{{ c.get_statut_display }}</span>
+                        {% else %}<span class="badge warning">{{ c.get_statut_display }}</span>{% endif %}
+                    </td>
+                    <td>{{ c.lignes.all|length }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty">Aucune commande d'achat.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

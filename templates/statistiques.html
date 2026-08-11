@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Statistiques | Supply Chain{% endblock %}
+{% block heading %}Statistiques{% endblock %}
+
+{% block content %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Valeur du stock</div>
+        <div class="kpi-value">{{ valeur_stock|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">FCFA (prix × qté disponible)</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Produits actifs</div>
+        <div class="kpi-value">{{ nb_produits_actifs }}</div>
+        <div class="kpi-sub">{{ nb_produits_inactifs }} inactifs</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Entrepôts actifs</div>
+        <div class="kpi-value">{{ nb_entrepots_actifs }}</div>
+        <div class="kpi-sub">{{ nb_entrepots_inactifs }} inactifs</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Mouvements nets</div>
+        <div class="kpi-value">{{ nb_entre_total|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">entrées : +{{ nb_entre_total|floatformat:0|intcomma }} · sorties : {{ nb_sortie_total|floatformat:0|intcomma }}</div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Répartition produits actifs / inactifs</h3>
+        <div class="chart-wrap">
+            <canvas id="produitsChart"></canvas>
+        </div>
+    </div>
+    <div class="panel">
+        <h3>Répartition entrepôts actifs / inactifs</h3>
+        <div class="chart-wrap">
+            <canvas id="entrepotsChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Mouvements de stock (entrées / sorties)</h3>
+        <div class="chart-wrap">
+            <canvas id="mouvementsChart"></canvas>
+        </div>
+    </div>
+    <div class="panel">
+        <h3>Valeur du stock par entrepôt</h3>
+        <div class="chart-wrap">
+            <canvas id="stockValeurChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="poly">
+    <div class="panel">
+        <h3>Top produits en stock</h3>
+        <div class="chart-wrap">
+            <canvas id="topStocksChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Commandes d'achat par statut</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Statut</th><th>Nombre</th></tr></thead>
+                <tbody>
+                    {% for c in commandes_achat_par_statut %}
+                    <tr><td>{{ c.statut }}</td><td>{{ c.n }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty">Aucune donnée.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Commandes de vente par statut</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Statut</th><th>Nombre</th></tr></thead>
+                <tbody>
+                    {% for c in commandes_vente_par_statut %}
+                    <tr><td>{{ c.statut }}</td><td>{{ c.n }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty">Aucune donnée.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Factures d'achat par statut</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Statut</th><th>Nombre</th></tr></thead>
+                <tbody>
+                    {% for f in factures_achat_par_statut %}
+                    <tr><td>{{ f.statut }}</td><td>{{ f.n }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty">Aucune donnée.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Factures de vente par statut</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Statut</th><th>Nombre</th></tr></thead>
+                <tbody>
+                    {% for f in factures_vente_par_statut %}
+                    <tr><td>{{ f.statut }}</td><td>{{ f.n }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty">Aucune donnée.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="two-col">
+    <div class="panel">
+        <h3>Top produits en stock</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Produit</th><th>Entrepôt</th><th>Quantité</th></tr></thead>
+                <tbody>
+                    {% for s in top_stocks %}
+                    <tr>
+                        <td>{{ s.produit.reference }} — {{ s.produit.designation }}</td>
+                        <td>{{ s.entrepot.nom }}</td>
+                        <td>{{ s.quantite_disponible }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="empty">Aucun stock.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h3>Top clients</h3>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Client</th><th>Commandes</th></tr></thead>
+                <tbody>
+                    {% for cl in top_clients %}
+                    <tr><td>{{ cl.nom }}</td><td>{{ cl.nb_commandes }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="2" class="empty">Aucun client.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Top fournisseurs</h3>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Fournisseur</th><th>Commandes</th></tr></thead>
+            <tbody>
+                {% for f in top_fournisseurs %}
+                <tr><td>{{ f.nom }}</td><td>{{ f.nb_commandes }}</td></tr>
+                {% empty %}
+                <tr><td colspan="2" class="empty">Aucun fournisseur.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+new Chart(document.getElementById('produitsChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ produits_labels_json|safe }},
+        datasets: [{ data: {{ produits_values_json|safe }}, backgroundColor: ['#067647','#6b7a90'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+new Chart(document.getElementById('entrepotsChart'), {
+    type: 'doughnut',
+    data: {
+        labels: {{ entrepots_labels_json|safe }},
+        datasets: [{ data: {{ entrepots_dispo_values_json|safe }}, backgroundColor: ['#1b5dbf','#6b7a90'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+});
+
+new Chart(document.getElementById('mouvementsChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ mouvements_labels_json|safe }},
+        datasets: [{ data: {{ mouvements_values_json|safe }}, backgroundColor: ['#b42318','#067647'] }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('stockValeurChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ entrepot_val_labels_json|safe }},
+        datasets: [{ label: 'Valeur (FCFA)', data: {{ entrepot_val_values_json|safe }}, backgroundColor: '#0ea5a4' }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+});
+
+new Chart(document.getElementById('topStocksChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ top_stocks_labels_json|safe }},
+        datasets: [{ label: 'Quantité', data: {{ top_stocks_values_json|safe }}, backgroundColor: '#1b5dbf' }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } }, indexAxis: 'y', scales: { x: { beginAtZero: true } } }
+});
+</script>
+{% endblock %}

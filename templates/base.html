@@ -1,0 +1,106 @@
+{% load static %}
+{% load humanize %}
+<!doctype html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% if parametres %}{{ parametres.nom_entreprise }}{% else %}Supply Chain{% endif %}{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <style>
+        :root {
+            --primary: {{ parametres.couleur_principale|default:'#14345B' }};
+            --accent: {{ parametres.couleur_accent|default:'#0EA5A4' }};
+        }
+    </style>
+    <script>
+        (function () {
+            function lighten(hex, amt) {
+                hex = hex.replace('#', '');
+                if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+                const num = parseInt(hex, 16);
+                let r = (num >> 16) & 255, g = (num >> 8) & 255, b = num & 255;
+                r = Math.min(255, Math.round(r + (255 - r) * amt));
+                g = Math.min(255, Math.round(g + (255 - g) * amt));
+                b = Math.min(255, Math.round(b + (255 - b) * amt));
+                return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+            }
+            var primary = getComputedStyle(document.documentElement).getPropertyValue('--primary').trim() || '#14345B';
+            document.documentElement.style.setProperty('--primary-light', lighten(primary, 0.35));
+        })();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="logo">⚙</span>
+            <span>
+                {% if parametres %}{{ parametres.nom_entreprise }}{% else %}Supply Chain{% endif %}
+            </span>
+        </div>
+        <nav>
+            <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                <span class="icon">▦</span><span>Dashboard</span>
+            </a>
+            <a href="{% url 'produits' %}" class="{% if request.resolver_match.url_name == 'produits' %}active{% endif %}">
+                <span class="icon">📦</span><span>Produits</span>
+            </a>
+            <a href="{% url 'entrepots' %}" class="{% if request.resolver_match.url_name == 'entrepots' %}active{% endif %}">
+                <span class="icon">🏬</span><span>Entrepôts</span>
+            </a>
+            <a href="{% url 'achats' %}" class="{% if request.resolver_match.url_name == 'achats' %}active{% endif %}">
+                <span class="icon">🛒</span><span>Achats</span>
+            </a>
+            <a href="{% url 'inventaire' %}" class="{% if request.resolver_match.url_name == 'inventaire' %}active{% endif %}">
+                <span class="icon">📊</span><span>Inventaire</span>
+            </a>
+            <a href="{% url 'ventes' %}" class="{% if request.resolver_match.url_name == 'ventes' %}active{% endif %}">
+                <span class="icon">💰</span><span>Ventes</span>
+            </a>
+            <a href="{% url 'comptable' %}" class="{% if request.resolver_match.url_name == 'comptable' %}active{% endif %}">
+                <span class="icon">🧾</span><span>Comptable</span>
+            </a>
+            <a href="{% url 'rapports' %}" class="{% if request.resolver_match.url_name == 'rapports' %}active{% endif %}">
+                <span class="icon">📈</span><span>Rapports</span>
+            </a>
+            <a href="{% url 'statistiques' %}" class="{% if request.resolver_match.url_name == 'statistiques' %}active{% endif %}">
+                <span class="icon">🧮</span><span>Statistiques</span>
+            </a>
+            <a href="{% url 'parametres' %}" class="{% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
+                <span class="icon">⚙️</span><span>Paramètres</span>
+            </a>
+            <a href="{% url 'profil' %}" class="{% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
+                <span class="icon">👤</span><span>Profil</span>
+            </a>
+        </nav>
+        <div class="footer">
+            <div class="footer-tag">Système de gestion de la chaîne d'approvisionnement</div>
+        </div>
+    </aside>
+
+    <main class="main">
+        <div class="topbar">
+            <h2>{% block heading %}{% endblock %}</h2>
+            <div class="user-chip">
+                <span class="avatar">
+                    {% if user_profile and user_profile.photo %}
+                        <img src="{{ user_profile.photo.url }}" alt="Avatar" class="avatar-img">
+                    {% else %}
+                        {{ request.user.username|slice:":1"|upper }}
+                    {% endif %}
+                </span>
+                <span>{{ request.user.username }}</span>
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit">Déconnexion</button>
+                </form>
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+    </main>
+</div>
+</body>
+</html>

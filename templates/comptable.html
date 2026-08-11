@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Comptable | Supply Chain{% endblock %}
+{% block heading %}Comptable{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Factures achat</div>
+        <div class="kpi-value">{{ nb_achat }}</div>
+        <div class="kpi-sub">{{ total_achat|floatformat:0|intcomma }} FCFA TTC</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Factures vente</div>
+        <div class="kpi-value">{{ nb_vente }}</div>
+        <div class="kpi-sub">{{ total_vente|floatformat:0|intcomma }} FCFA TTC</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">À payer</div>
+        <div class="kpi-value">{{ a_payer|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">factures achat non réglées</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Ventes impayées</div>
+        <div class="kpi-value">{{ impayees|floatformat:0|intcomma }}</div>
+        <div class="kpi-sub">FCFA TTC non encaissés</div>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <h3>Nouvelle facture d'achat</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="facture_achat">
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Référence</label>
+                {{ facture_achat_form.reference }}
+            </div>
+            <div class="form-field">
+                <label>Commande achat</label>
+                {{ facture_achat_form.commande_achat }}
+            </div>
+            <div class="form-field">
+                <label>Montant HT</label>
+                {{ facture_achat_form.montant_ht }}
+            </div>
+            <div class="form-field">
+                <label>Taux TVA (%)</label>
+                {{ facture_achat_form.taux_tva }}
+            </div>
+            <div class="form-field">
+                <label>Montant TTC</label>
+                {{ facture_achat_form.montant_ttc }}
+            </div>
+            <div class="form-field">
+                <label>Date facture</label>
+                {{ facture_achat_form.date_facture }}
+            </div>
+            <div class="form-field">
+                <label>Date échéance</label>
+                {{ facture_achat_form.date_echeance }}
+            </div>
+            <div class="form-field">
+                <label>Statut</label>
+                {{ facture_achat_form.statut }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer la facture</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel form-panel">
+    <h3>Nouvelle facture de vente</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <input type="hidden" name="form_type" value="facture_vente">
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Référence</label>
+                {{ facture_vente_form.reference }}
+            </div>
+            <div class="form-field">
+                <label>Commande vente</label>
+                {{ facture_vente_form.commande_vente }}
+            </div>
+            <div class="form-field">
+                <label>Montant HT</label>
+                {{ facture_vente_form.montant_ht }}
+            </div>
+            <div class="form-field">
+                <label>Taux TVA (%)</label>
+                {{ facture_vente_form.taux_tva }}
+            </div>
+            <div class="form-field">
+                <label>Montant TTC</label>
+                {{ facture_vente_form.montant_ttc }}
+            </div>
+            <div class="form-field">
+                <label>Date facture</label>
+                {{ facture_vente_form.date_facture }}
+            </div>
+            <div class="form-field">
+                <label>Date échéance</label>
+                {{ facture_vente_form.date_echeance }}
+            </div>
+            <div class="form-field">
+                <label>Statut</label>
+                {{ facture_vente_form.statut }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer la facture</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Synthèse TVA</h3>
+    <div class="mini-grid">
+        <div class="mini-box mini-credit">
+            <div class="mini-label">TVA collectée (ventes)</div>
+            <div class="mini-value">{{ tva_collectee|floatformat:2|intcomma }} FCFA</div>
+        </div>
+        <div class="mini-box mini-debit">
+            <div class="mini-label">TVA déductible (achats)</div>
+            <div class="mini-value">{{ tva_deductible|floatformat:2|intcomma }} FCFA</div>
+        </div>
+        <div class="mini-box {% if solde_tva >= 0 %}mini-credit{% else %}mini-debit{% endif %}">
+            <div class="mini-label">Solde de TVA à verser</div>
+            <div class="mini-value">{{ solde_tva|floatformat:2|intcomma }} FCFA</div>
+        </div>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Factures d'achat</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Référence</th><th>Date</th><th>Montant HT</th><th>TVA</th><th>Montant TTC</th><th>Statut</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for fa in factures_achat %}
+                <tr>
+                    <td>{{ fa.reference }}</td>
+                    <td>{{ fa.date_facture|date:"d/m/Y" }}</td>
+                    <td>{{ fa.montant_ht|floatformat:2|intcomma }}</td>
+                    <td>{{ fa.taux_tva|floatformat:0 }}%</td>
+                    <td>{{ fa.montant_ttc|floatformat:2|intcomma }}</td>
+                    <td>
+                        {% if fa.statut == 'PAYEE' %}<span class="badge success">{{ fa.get_statut_display }}</span>
+                        {% elif fa.statut == 'CONTESTEE' %}<span class="badge danger">{{ fa.get_statut_display }}</span>
+                        {% else %}<span class="badge warning">{{ fa.get_statut_display }}</span>{% endif %}
+                    </td>
+<td>
+                        <a href="{% url 'facture_achat_imprimer' fa.pk %}" target="_blank" class="btn btn-sm btn-outline">🖨️ Imprimer</a>
+                        {% if fa.statut != 'PAYEE' %}
+                        <form method="post" action="{% url 'facture_achat_payer' fa.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success">Marquer payée</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty">Aucune facture d'achat.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="panel">
+    <h3>Factures de vente</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>Référence</th><th>Date</th><th>Montant HT</th><th>TVA</th><th>Montant TTC</th><th>Statut</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for fv in factures_vente %}
+                <tr>
+                    <td>{{ fv.reference }}</td>
+                    <td>{{ fv.date_facture|date:"d/m/Y" }}</td>
+                    <td>{{ fv.montant_ht|floatformat:2|intcomma }}</td>
+                    <td>{{ fv.taux_tva|floatformat:0 }}%</td>
+                    <td>{{ fv.montant_ttc|floatformat:2|intcomma }}</td>
+                    <td>
+                        {% if fv.statut == 'PAYEE' %}<span class="badge success">{{ fv.get_statut_display }}</span>
+                        {% elif fv.statut == 'ANNULEE' %}<span class="badge danger">{{ fv.get_statut_display }}</span>
+                        {% elif fv.statut == 'IMPAYEE' %}<span class="badge danger">{{ fv.get_statut_display }}</span>
+                        {% else %}<span class="badge info">{{ fv.get_statut_display }}</span>{% endif %}
+                    </td>
+<td>
+                        <a href="{% url 'facture_vente_imprimer' fv.pk %}" target="_blank" class="btn btn-sm btn-outline">🖨️ Imprimer</a>
+                        {% if fv.statut != 'PAYEE' and fv.statut != 'ANNULEE' %}
+                        <form method="post" action="{% url 'facture_vente_payer' fv.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success">Marquer payée</button>
+                        </form>
+                        {% endif %}
+                        {% if fv.statut != 'ANNULEE' %}
+                        <form method="post" action="{% url 'facture_vente_annuler' fv.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-danger">Annuler</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="empty">Aucune facture de vente.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+

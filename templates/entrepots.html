@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Entrepôts | Supply Chain{% endblock %}
+{% block heading %}Entrepôts{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+<div class="cards">
+    <div class="card kpi">
+        <div class="kpi-label">Total entrepôts</div>
+        <div class="kpi-value">{{ nb_entrepots }}</div>
+    </div>
+    <div class="card kpi">
+        <div class="kpi-label">Actifs</div>
+        <div class="kpi-value">{{ nb_actifs }}</div>
+    </div>
+</div>
+
+<div class="panel form-panel">
+    <h3>{% if edit_instance %}Modifier l'entrepôt : {{ edit_instance.nom }}{% else %}Ajouter un entrepôt{% endif %}</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="form-field">
+                <label>Nom</label>
+                {{ form.nom }}
+                {% if form.nom.errors %}<div class="field-error">{{ form.nom.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label>Responsable</label>
+                {{ form.responsable }}
+            </div>
+            <div class="form-field">
+                <label>Téléphone</label>
+                {{ form.telephone }}
+            </div>
+            <div class="form-field">
+                <label>Capacité totale</label>
+                {{ form.capacite_totale }}
+            </div>
+            <div class="form-field is-full">
+                <label>Adresse</label>
+                {{ form.adresse }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Enregistrer l'entrepôt</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Liste des entrepôts</h3>
+<div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nom</th>
+                    <th>Adresse</th>
+                    <th>Responsable</th>
+                    <th>Téléphone</th>
+                    <th>Capacité</th>
+                    <th>Lignes stock</th>
+                    <th>Stock total</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in entrepots %}
+                <tr>
+                    <td>{{ e.nom }}</td>
+                    <td>{{ e.adresse }}</td>
+                    <td>{{ e.responsable }}</td>
+                    <td>{{ e.telephone }}</td>
+                    <td>{{ e.capacite_totale }}</td>
+                    <td>{{ e.nb_stocks }}</td>
+                    <td>{{ e.stock_total|default:0|intcomma }}</td>
+                    <td>
+                        {% if e.actif %}<span class="badge success">Actif</span>
+                        {% else %}<span class="badge neutral">Inactif</span>{% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'entrepot_edit' e.pk %}" class="btn btn-outline btn-sm">Modifier</a>
+                        <form method="post" action="{% url 'entrepot_delete' e.pk %}" class="inline-form" onsubmit="return confirm('Supprimer cet entrepôt ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="empty">Aucun entrepôt enregistré.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
