@@ -1,0 +1,13 @@
+# Environnements et secrets locaux
+.venv/
+.env
+
+# Fichiers Python générés
+__pycache__/
+*.py[cod]
+
+# Base de données locale et fichiers collectés
+db.sqlite3
+staticfiles/
+staticfiles_build/
+media/

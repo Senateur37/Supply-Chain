@@ -12,6 +12,10 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 import os
 from pathlib import Path
+from urllib.parse import unquote, urlparse
+#from dotenv import load_dotenv
+from decouple import config, Csv
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -19,12 +23,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-6s=#gvu2r_h-jkbm^38f7!3jg+w+esv3mpg+70=hdqm+_-9axo')
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+#DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG= False
 
-ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -81,22 +86,49 @@ WSGI_APPLICATION = 'Supply_Chainn.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-DATABASE_URL = os.environ.get('DATABASE_URL')
+# if DATABASE_URL := os.environ.get('DATABASE_URL'):
+#     parsed_database_url = urlparse(DATABASE_URL)
+#     database_engine = {
+#         'postgres': 'django.db.backends.postgresql',
+#         'postgresql': 'django.db.backends.postgresql',
+#         'mysql': 'django.db.backends.mysql',
+#         'sqlite': 'django.db.backends.sqlite3',
+#     }.get(parsed_database_url.scheme, 'django.db.backends.postgresql')
 
-if DATABASE_URL:
-    import dj_database_url
-    DATABASES = {'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)}
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'supply_chain_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-        }
-    }
+#     if database_engine == 'django.db.backends.sqlite3':
+#         DATABASES = {
+#             'default': {
+#                 'ENGINE': database_engine,
+#                 'NAME': unquote(parsed_database_url.path.lstrip('/')),
+#             }
+#         }
+#     else:
+#         DATABASES = {
+#             'default': {
+#                 'ENGINE': database_engine,
+#                 'NAME': unquote(parsed_database_url.path.lstrip('/')),
+#                 'USER': unquote(parsed_database_url.username or ''),
+#                 'PASSWORD': unquote(parsed_database_url.password or ''),
+#                 'HOST': parsed_database_url.hostname or '',
+#                 'PORT': str(parsed_database_url.port or ''),
+#                 'CONN_MAX_AGE': 600,
+#             }
+#         }
+# else:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.postgresql',
+#             'NAME': os.environ.get('DB_NAME', 'supply_chain_db'),
+#             'USER': os.environ.get('DB_USER', 'postgres'),
+#             'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+#             'HOST': os.environ.get('DB_HOST', 'localhost'),
+#             'PORT': os.environ.get('DB_PORT', '5432'),
+#         }
+#     }
+
+DDATABASES = {
+    'default': dj_database_url.config(default=config('DATABASE_URL'))
+}
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -134,7 +166,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'Africa/Abidjan'
+TIME_ZONE = 'Africa/Bamako'
 
 USE_I18N = True
 
