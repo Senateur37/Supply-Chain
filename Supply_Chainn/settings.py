@@ -183,5 +183,10 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': False,
         },
+        'apps': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
     },
 }

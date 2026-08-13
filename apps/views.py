@@ -1,4 +1,5 @@
 import json
+import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -17,6 +18,9 @@ from .forms import (
     FactureAchatForm, FactureVenteForm, ParametreAppForm, UserProfileForm,
 )
 from .models import ParametreApp, UserProfile
+
+
+logger = logging.getLogger('django.request')
 
 
 @login_required
@@ -739,9 +743,17 @@ def profil_view(request):
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
-            form.save()
-            messages.success(request, 'Profil mis à jour avec succès.')
-            return redirect('profil')
+            try:
+                form.save()
+            except Exception:
+                logger.exception("Échec de l'enregistrement de la photo de profil.")
+                messages.error(
+                    request,
+                    "Impossible d'enregistrer la photo. Vérifiez le stockage média du service Render.",
+                )
+            else:
+                messages.success(request, 'Profil mis à jour avec succès.')
+                return redirect('profil')
     context = {
         'form': form,
         'profile': profile,
