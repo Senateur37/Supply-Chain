@@ -13,7 +13,7 @@ class ProduitForm(forms.ModelForm):
         model = Produit
         fields = [
             'reference', 'designation', 'description', 'prix_unitaire', 'unite_mesure',
-            'stock_minimum', 'stock_securite', 'stock_alerte', 'stock_maximum', 'montant',
+            'stock_minimum', 'stock_securite', 'stock_alerte', 'stock_maximum', 'quantite',
         ]
         widgets = {
             'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex. REF-001'}),
@@ -25,7 +25,7 @@ class ProduitForm(forms.ModelForm):
             'stock_securite': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'stock_alerte': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
             'stock_maximum': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
-            'montant': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'quantite': forms.NumberInput(attrs={'class': 'form-control', 'min': '0'}),
         }
 
 

@@ -6,7 +6,7 @@ from .models import Produit
 class ProduitAdmin(admin.ModelAdmin):
     list_display = (
         'reference', 'designation', 'prix_unitaire', 'unite_mesure', 'stock_minimum',
-        'stock_securite', 'stock_alerte', 'stock_maximum', 'montant', 'actif',
+        'stock_securite', 'stock_alerte', 'stock_maximum', 'quantite', 'montant', 'actif',
     )
     list_filter = ('actif', 'unite_mesure')
     search_fields = ('reference', 'designation')

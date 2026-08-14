@@ -20,6 +20,7 @@ class Produit(models.Model):
     stock_securite = models.PositiveIntegerField(default=0)
     stock_alerte = models.PositiveIntegerField(default=0)
     stock_maximum = models.PositiveIntegerField(default=0)
+    quantite = models.PositiveIntegerField(default=0)
     montant = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     actif = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -32,3 +33,8 @@ class Produit(models.Model):
 
     def __str__(self):
         return f'{self.reference} – {self.designation}'
+
+    def save(self, *args, **kwargs):
+        """Le montant d'un produit est calculé depuis son prix et sa quantité."""
+        self.montant = self.prix_unitaire * self.quantite
+        super().save(*args, **kwargs)
