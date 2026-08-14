@@ -1,4 +1,6 @@
 from django import forms
+from django.contrib.auth import get_user_model
+from django.contrib.auth.forms import UserCreationForm
 from Produits.models import Produit
 from Entrepots.models import Entrepot
 from Achats.models import Fournisseur, CommandeAchat
@@ -6,6 +8,57 @@ from Ventes.models import Client, CommandeVente
 from Inventaire.models import Stock, MouvementStock
 from Comptable.models import FactureAchat, FactureVente
 from .models import ParametreApp, UserProfile
+
+
+User = get_user_model()
+
+
+class UtilisateurForm(UserCreationForm):
+    """Création d'un compte depuis l'interface d'administration."""
+
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Nom d'utilisateur"}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Prénom'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'email@exemple.com'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = "Nom d'utilisateur"
+        self.fields['first_name'].label = 'Prénom'
+        self.fields['last_name'].label = 'Nom'
+        self.fields['email'].label = 'E-mail'
+        self.fields['password1'].label = 'Mot de passe'
+        self.fields['password2'].label = 'Confirmation du mot de passe'
+        self.fields['password1'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Mot de passe'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Confirmer le mot de passe'})
+
+
+class UtilisateurModificationForm(forms.ModelForm):
+    """Modification des informations et des droits d'un compte utilisateur."""
+
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_staff')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['username'].label = "Nom d'utilisateur"
+        self.fields['first_name'].label = 'Prénom'
+        self.fields['last_name'].label = 'Nom'
+        self.fields['email'].label = 'E-mail'
+        self.fields['is_staff'].label = 'Administrateur'
 
 
 class ProduitForm(forms.ModelForm):

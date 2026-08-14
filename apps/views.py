@@ -1,7 +1,8 @@
 import json
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth import get_user_model
 from django.contrib import messages
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
@@ -16,11 +17,17 @@ from .forms import (
     ProduitForm, EntrepotForm, FournisseurForm, ClientForm,
     CommandeAchatForm, CommandeVenteForm, MouvementStockForm,
     FactureAchatForm, FactureVenteForm, ParametreAppForm, UserProfileForm,
+    UtilisateurForm, UtilisateurModificationForm,
 )
 from .models import ParametreApp, UserProfile
 
 
 logger = logging.getLogger('django.request')
+User = get_user_model()
+
+
+def administrateur_requis(user):
+    return user.is_staff
 
 
 @login_required
@@ -759,3 +766,67 @@ def profil_view(request):
         'profile': profile,
     }
     return render(request, 'profil.html', context)
+
+
+@login_required
+@user_passes_test(administrateur_requis)
+def utilisateurs_view(request):
+    """Liste et création des comptes utilisateurs."""
+    form = UtilisateurForm()
+    if request.method == 'POST':
+        form = UtilisateurForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Utilisateur créé avec succès.')
+            return redirect('utilisateurs')
+
+    return render(request, 'utilisateurs.html', {
+        'form': form,
+        'utilisateurs': User.objects.order_by('username'),
+    })
+
+
+@login_required
+@user_passes_test(administrateur_requis)
+def utilisateur_edit(request, pk):
+    """Modifie les informations d'un compte sans changer son mot de passe."""
+    utilisateur = get_object_or_404(User, pk=pk)
+    form = UtilisateurModificationForm(request.POST or None, instance=utilisateur)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, 'Utilisateur mis à jour avec succès.')
+        return redirect('utilisateurs')
+    return render(request, 'utilisateur_edit.html', {'form': form, 'utilisateur': utilisateur})
+
+
+@login_required
+@user_passes_test(administrateur_requis)
+def utilisateur_toggle_actif(request, pk):
+    """Active ou désactive un compte, sans permettre à l'administrateur de se bloquer."""
+    utilisateur = get_object_or_404(User, pk=pk)
+    if request.method == 'POST':
+        if utilisateur == request.user:
+            messages.error(request, 'Vous ne pouvez pas désactiver votre propre compte.')
+        else:
+            utilisateur.is_active = not utilisateur.is_active
+            utilisateur.save(update_fields=['is_active'])
+            statut = 'activé' if utilisateur.is_active else 'désactivé'
+            messages.success(request, f'Utilisateur {utilisateur.username} {statut}.')
+    return redirect('utilisateurs')
+
+
+@login_required
+@user_passes_test(administrateur_requis)
+def utilisateur_delete(request, pk):
+    """Supprime un compte, sauf le compte courant et les comptes superutilisateur."""
+    utilisateur = get_object_or_404(User, pk=pk)
+    if request.method == 'POST':
+        if utilisateur == request.user:
+            messages.error(request, 'Vous ne pouvez pas supprimer votre propre compte.')
+        elif utilisateur.is_superuser:
+            messages.error(request, 'Un compte superutilisateur ne peut pas être supprimé ici.')
+        else:
+            nom = utilisateur.username
+            utilisateur.delete()
+            messages.success(request, f'Utilisateur {nom} supprimé.')
+    return redirect('utilisateurs')

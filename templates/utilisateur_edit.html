@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Modifier un utilisateur | Supply Chain{% endblock %}
+{% block heading %}Modifier l'utilisateur{% endblock %}
+
+{% block content %}
+<div class="panel form-panel">
+    <h3>Compte de {{ utilisateur.username }}</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="field-error">{{ field.errors|join:", " }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <a href="{% url 'utilisateurs' %}" class="btn btn-outline">Annuler</a>
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -26,4 +26,8 @@ urlpatterns = [
     path('ventes/clients/<int:pk>/supprimer/', views.client_delete, name='client_delete'),
     path('parametres/', views.parametres_view, name='parametres'),
     path('profil/', views.profil_view, name='profil'),
+    path('utilisateurs/', views.utilisateurs_view, name='utilisateurs'),
+    path('utilisateurs/<int:pk>/modifier/', views.utilisateur_edit, name='utilisateur_edit'),
+    path('utilisateurs/<int:pk>/statut/', views.utilisateur_toggle_actif, name='utilisateur_toggle_actif'),
+    path('utilisateurs/<int:pk>/supprimer/', views.utilisateur_delete, name='utilisateur_delete'),
 ]

@@ -74,6 +74,11 @@
             <a href="{% url 'profil' %}" class="{% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
                 <span class="icon">👤</span><span>Profil</span>
             </a>
+            {% if request.user.is_staff %}
+            <a href="{% url 'utilisateurs' %}" class="{% if request.resolver_match.url_name == 'utilisateurs' %}active{% endif %}">
+                <span class="icon">👥</span><span>Utilisateurs</span>
+            </a>
+            {% endif %}
         </nav>
         <div class="footer">
             <div class="footer-tag">Système de gestion de la chaîne d'approvisionnement</div>

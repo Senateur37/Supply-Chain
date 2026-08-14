@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Utilisateurs | Supply Chain{% endblock %}
+{% block heading %}Gestion des utilisateurs{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="panel form-panel">
+    <h3>Ajouter un utilisateur</h3>
+    <form method="post" class="product-form">
+        {% csrf_token %}
+        <div class="form-grid">
+            {% for field in form %}
+            <div class="form-field">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<p class="form-hint">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<div class="field-error">{{ field.errors|join:", " }}</div>{% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">+ Créer l'utilisateur</button>
+        </div>
+    </form>
+</div>
+
+<div class="panel">
+    <h3>Liste des utilisateurs</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Nom complet</th>
+                    <th>E-mail</th>
+                    <th>Dernière connexion</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for utilisateur in utilisateurs %}
+                <tr>
+                    <td>{{ utilisateur.username }}{% if utilisateur.is_superuser %} <span class="badge neutral">Admin</span>{% endif %}</td>
+                    <td>{{ utilisateur.get_full_name|default:'—' }}</td>
+                    <td>{{ utilisateur.email|default:'—' }}</td>
+                    <td>{% if utilisateur.last_login %}{{ utilisateur.last_login|date:"d/m/Y H:i" }}{% else %}Jamais{% endif %}</td>
+                    <td>{% if utilisateur.is_active %}<span class="badge success">Actif</span>{% else %}<span class="badge neutral">Désactivé</span>{% endif %}</td>
+                    <td class="actions">
+                        <a href="{% url 'utilisateur_edit' utilisateur.pk %}" class="btn btn-outline btn-sm">Modifier</a>
+                        {% if utilisateur != request.user %}
+                        <form method="post" action="{% url 'utilisateur_toggle_actif' utilisateur.pk %}" class="inline-form">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline btn-sm">
+                                {% if utilisateur.is_active %}Désactiver{% else %}Activer{% endif %}
+                            </button>
+                        </form>
+                        {% if not utilisateur.is_superuser %}
+                        <form method="post" action="{% url 'utilisateur_delete' utilisateur.pk %}" class="inline-form" onsubmit="return confirm('Supprimer cet utilisateur ?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                        {% endif %}
+                        {% else %}
+                        <span class="muted">Compte courant</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="empty">Aucun utilisateur enregistré.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

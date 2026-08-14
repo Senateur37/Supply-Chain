@@ -1,3 +1,52 @@
+from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 
-# Create your tests here.
+
+User = get_user_model()
+
+
+class GestionUtilisateursTests(TestCase):
+	def setUp(self):
+		self.admin = User.objects.create_user('admin', password='mot-de-passe', is_staff=True)
+		self.client.force_login(self.admin)
+
+	def test_admin_can_create_and_edit_user(self):
+		response = self.client.post(reverse('utilisateurs'), {
+			'username': 'employe',
+			'first_name': 'Awa',
+			'last_name': 'Kone',
+			'email': 'awa@example.com',
+			'password1': 'MotDePasseSolide123!',
+			'password2': 'MotDePasseSolide123!',
+		})
+		self.assertRedirects(response, reverse('utilisateurs'))
+		utilisateur = User.objects.get(username='employe')
+
+		response = self.client.post(reverse('utilisateur_edit', args=[utilisateur.pk]), {
+			'username': 'employe',
+			'first_name': 'Awa',
+			'last_name': 'Traore',
+			'email': 'awa@example.com',
+			'is_staff': 'on',
+		})
+		self.assertRedirects(response, reverse('utilisateurs'))
+		utilisateur.refresh_from_db()
+		self.assertEqual(utilisateur.last_name, 'Traore')
+		self.assertTrue(utilisateur.is_staff)
+
+	def test_admin_cannot_delete_self_or_superuser(self):
+		response = self.client.post(reverse('utilisateur_delete', args=[self.admin.pk]))
+		self.assertRedirects(response, reverse('utilisateurs'))
+		self.assertTrue(User.objects.filter(pk=self.admin.pk).exists())
+
+		superuser = User.objects.create_superuser('root', password='mot-de-passe')
+		response = self.client.post(reverse('utilisateur_delete', args=[superuser.pk]))
+		self.assertRedirects(response, reverse('utilisateurs'))
+		self.assertTrue(User.objects.filter(pk=superuser.pk).exists())
+
+	def test_non_staff_cannot_access_user_management(self):
+		utilisateur = User.objects.create_user('employe', password='mot-de-passe')
+		self.client.force_login(utilisateur)
+		response = self.client.get(reverse('utilisateurs'))
+		self.assertNotEqual(response.status_code, 200)
