@@ -8,6 +8,7 @@ from Ventes.models import Client, CommandeVente
 from Inventaire.models import Stock, MouvementStock
 from Comptable.models import FactureAchat, FactureVente
 from .models import ParametreApp, UserProfile
+from .permissions import ROLE_CHOICES
 
 
 User = get_user_model()
@@ -28,6 +29,11 @@ class UtilisateurForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['role'] = forms.ChoiceField(
+            choices=ROLE_CHOICES,
+            label='Rôle',
+            widget=forms.Select(attrs={'class': 'form-control'}),
+        )
         self.fields['username'].label = "Nom d'utilisateur"
         self.fields['first_name'].label = 'Prénom'
         self.fields['last_name'].label = 'Nom'
@@ -54,6 +60,17 @@ class UtilisateurModificationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['role'] = forms.ChoiceField(
+            choices=ROLE_CHOICES,
+            label='Rôle',
+            widget=forms.Select(attrs={'class': 'form-control'}),
+        )
+        if self.instance.pk:
+            self.initial['role'] = (
+                self.instance.groups.first().name
+                if self.instance.groups.exists()
+                else ('admin' if self.instance.is_staff else 'auditeur')
+            )
         self.fields['username'].label = "Nom d'utilisateur"
         self.fields['first_name'].label = 'Prénom'
         self.fields['last_name'].label = 'Nom'

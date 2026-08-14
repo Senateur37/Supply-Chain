@@ -44,37 +44,53 @@
             <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
                 <span class="icon">▦</span><span>Dashboard</span>
             </a>
+            {% if is_admin or 'magasinier' in user_roles or 'gestionnaire_achats' in user_roles or 'commercial' in user_roles or 'comptable' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'produits' %}" class="{% if request.resolver_match.url_name == 'produits' %}active{% endif %}">
                 <span class="icon">📦</span><span>Produits</span>
             </a>
+            {% endif %}
+            {% if is_admin or 'magasinier' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'entrepots' %}" class="{% if request.resolver_match.url_name == 'entrepots' %}active{% endif %}">
                 <span class="icon">🏬</span><span>Entrepôts</span>
             </a>
+            {% endif %}
+            {% if is_admin or 'gestionnaire_achats' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'achats' %}" class="{% if request.resolver_match.url_name == 'achats' %}active{% endif %}">
                 <span class="icon">🛒</span><span>Achats</span>
             </a>
+            {% endif %}
+            {% if is_admin or 'magasinier' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'inventaire' %}" class="{% if request.resolver_match.url_name == 'inventaire' %}active{% endif %}">
                 <span class="icon">📊</span><span>Inventaire</span>
             </a>
+            {% endif %}
+            {% if is_admin or 'commercial' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'ventes' %}" class="{% if request.resolver_match.url_name == 'ventes' %}active{% endif %}">
                 <span class="icon">💰</span><span>Ventes</span>
             </a>
+            {% endif %}
+            {% if is_admin or 'comptable' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'comptable' %}" class="{% if request.resolver_match.url_name == 'comptable' %}active{% endif %}">
                 <span class="icon">🧾</span><span>Comptable</span>
             </a>
+            {% endif %}
+            {% if is_admin or 'auditeur' in user_roles %}
             <a href="{% url 'rapports' %}" class="{% if request.resolver_match.url_name == 'rapports' %}active{% endif %}">
                 <span class="icon">📈</span><span>Rapports</span>
             </a>
             <a href="{% url 'statistiques' %}" class="{% if request.resolver_match.url_name == 'statistiques' %}active{% endif %}">
                 <span class="icon">🧮</span><span>Statistiques</span>
             </a>
+            {% endif %}
+            {% if is_admin %}
             <a href="{% url 'parametres' %}" class="{% if request.resolver_match.url_name == 'parametres' %}active{% endif %}">
                 <span class="icon">⚙️</span><span>Paramètres</span>
             </a>
+            {% endif %}
             <a href="{% url 'profil' %}" class="{% if request.resolver_match.url_name == 'profil' %}active{% endif %}">
                 <span class="icon">👤</span><span>Profil</span>
             </a>
-            {% if request.user.is_staff %}
+            {% if is_admin %}
             <a href="{% url 'utilisateurs' %}" class="{% if request.resolver_match.url_name == 'utilisateurs' %}active{% endif %}">
                 <span class="icon">👥</span><span>Utilisateurs</span>
             </a>

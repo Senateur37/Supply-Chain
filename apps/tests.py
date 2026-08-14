@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 from django.urls import reverse
 
@@ -17,6 +18,7 @@ class GestionUtilisateursTests(TestCase):
 			'first_name': 'Awa',
 			'last_name': 'Kone',
 			'email': 'awa@example.com',
+			'role': 'commercial',
 			'password1': 'MotDePasseSolide123!',
 			'password2': 'MotDePasseSolide123!',
 		})
@@ -28,12 +30,22 @@ class GestionUtilisateursTests(TestCase):
 			'first_name': 'Awa',
 			'last_name': 'Traore',
 			'email': 'awa@example.com',
+			'role': 'admin',
 			'is_staff': 'on',
 		})
 		self.assertRedirects(response, reverse('utilisateurs'))
 		utilisateur.refresh_from_db()
 		self.assertEqual(utilisateur.last_name, 'Traore')
 		self.assertTrue(utilisateur.is_staff)
+		self.assertEqual(utilisateur.groups.get().name, 'admin')
+
+	def test_role_is_saved_and_restricts_modules(self):
+		utilisateur = User.objects.create_user('commercial', password='mot-de-passe')
+		utilisateur.groups.create(name='commercial')
+		self.client.force_login(utilisateur)
+		self.assertEqual(self.client.get(reverse('ventes')).status_code, 200)
+		with self.assertRaises(PermissionDenied):
+			self.client.get(reverse('comptable'))
 
 	def test_admin_cannot_delete_self_or_superuser(self):
 		response = self.client.post(reverse('utilisateur_delete', args=[self.admin.pk]))

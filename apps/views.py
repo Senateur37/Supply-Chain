@@ -3,6 +3,7 @@ import logging
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncMonth
@@ -20,6 +21,7 @@ from .forms import (
     UtilisateurForm, UtilisateurModificationForm,
 )
 from .models import ParametreApp, UserProfile
+from .permissions import role_required
 
 
 logger = logging.getLogger('django.request')
@@ -27,7 +29,15 @@ User = get_user_model()
 
 
 def administrateur_requis(user):
-    return user.is_staff
+    return user.is_staff or user.groups.filter(name='admin').exists()
+
+
+def appliquer_role(utilisateur, role):
+    """Associe un seul rôle métier au compte et synchronise le statut admin."""
+    utilisateur.groups.set([Group.objects.get_or_create(name=role)[0]])
+    if not utilisateur.is_superuser:
+        utilisateur.is_staff = role == 'admin'
+        utilisateur.save(update_fields=['is_staff'])
 
 
 @login_required
@@ -121,7 +131,7 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', context)
 
 
-@login_required
+@role_required('magasinier', 'gestionnaire_achats', 'commercial', 'comptable', 'auditeur')
 def produits_view(request):
     form = ProduitForm()
     if request.method == 'POST':
@@ -140,7 +150,7 @@ def produits_view(request):
     return render(request, 'produits.html', context)
 
 
-@login_required
+@role_required('magasinier', 'gestionnaire_achats', 'commercial', 'auditeur')
 def produit_edit(request, pk):
     """Modifie un produit existant."""
     produit = get_object_or_404(Produit, pk=pk)
@@ -160,7 +170,7 @@ def produit_edit(request, pk):
     })
 
 
-@login_required
+@role_required('magasinier', 'gestionnaire_achats', 'commercial', 'auditeur')
 def produit_delete(request, pk):
     """Supprime un produit."""
     produit = get_object_or_404(Produit, pk=pk)
@@ -171,7 +181,7 @@ def produit_delete(request, pk):
 
 
 
-@login_required
+@role_required('magasinier', 'gestionnaire_achats', 'auditeur')
 def fournisseur_edit(request, pk):
     """Modifie un fournisseur existant."""
     fournisseur = get_object_or_404(Fournisseur, pk=pk)
@@ -194,7 +204,7 @@ def fournisseur_edit(request, pk):
     })
 
 
-@login_required
+@role_required('magasinier', 'gestionnaire_achats', 'auditeur')
 def fournisseur_delete(request, pk):
     """Supprime un fournisseur."""
     fournisseur = get_object_or_404(Fournisseur, pk=pk)
@@ -204,7 +214,7 @@ def fournisseur_delete(request, pk):
     return redirect('achats')
 
 
-@login_required
+@role_required('magasinier', 'auditeur')
 def entrepots_view(request):
 
     form = EntrepotForm()
@@ -227,7 +237,7 @@ def entrepots_view(request):
     return render(request, 'entrepots.html', context)
 
 
-@login_required
+@role_required('magasinier', 'auditeur')
 def entrepot_edit(request, pk):
     """Modifie un entrepôt existant."""
     entrepot = get_object_or_404(Entrepot, pk=pk)
@@ -247,7 +257,7 @@ def entrepot_edit(request, pk):
     })
 
 
-@login_required
+@role_required('magasinier', 'auditeur')
 def entrepot_delete(request, pk):
     """Supprime un entrepôt."""
     entrepot = get_object_or_404(Entrepot, pk=pk)
@@ -257,7 +267,7 @@ def entrepot_delete(request, pk):
     return redirect('entrepots')
 
 
-@login_required
+@role_required('gestionnaire_achats', 'auditeur')
 def achats_view(request):
     fournisseur_form = FournisseurForm()
     commande_form = CommandeAchatForm()
@@ -290,7 +300,7 @@ def achats_view(request):
     return render(request, 'achats.html', context)
 
 
-@login_required
+@role_required('magasinier', 'auditeur')
 def inventaire_view(request):
     form = MouvementStockForm()
     if request.method == 'POST':
@@ -323,7 +333,7 @@ def inventaire_view(request):
     return render(request, 'inventaire.html', context)
 
 
-@login_required
+@role_required('commercial', 'auditeur')
 def ventes_view(request):
     client_form = ClientForm()
     commande_form = CommandeVenteForm()
@@ -355,7 +365,7 @@ def ventes_view(request):
     return render(request, 'ventes.html', context)
 
 
-@login_required
+@role_required('commercial', 'auditeur')
 def client_edit(request, pk):
     """Modifie un client existant."""
     client = get_object_or_404(Client, pk=pk)
@@ -378,7 +388,7 @@ def client_edit(request, pk):
     })
 
 
-@login_required
+@role_required('commercial', 'auditeur')
 def client_delete(request, pk):
     """Supprime un client."""
     client = get_object_or_404(Client, pk=pk)
@@ -388,7 +398,7 @@ def client_delete(request, pk):
     return redirect('ventes')
 
 
-@login_required
+@role_required('comptable', 'auditeur')
 def comptable_view(request):
 
     facture_achat_form = FactureAchatForm()
@@ -444,7 +454,7 @@ def comptable_view(request):
     return render(request, 'comptable.html', context)
 
 
-@login_required
+@role_required('auditeur')
 def rapports_view(request):
     """Tableau de bord analytique : indicateurs globaux de la chaîne logistique."""
     # Ventes / achats
@@ -551,7 +561,7 @@ def rapports_view(request):
     return render(request, 'rapports.html', context)
 
 
-@login_required
+@role_required('auditeur')
 def statistiques_view(request):
     """Page de statistiques détaillées : répartitions et indicateurs avancés."""
     # Répartition des produits par statut
@@ -659,7 +669,7 @@ def statistiques_view(request):
     return render(request, 'statistiques.html', context)
 
 
-@login_required
+@role_required('comptable')
 def facture_achat_payee(request, pk):
     """Marque une facture d'achat comme payée."""
     facture = get_object_or_404(FactureAchat, pk=pk)
@@ -670,7 +680,7 @@ def facture_achat_payee(request, pk):
     return redirect('comptable')
 
 
-@login_required
+@role_required('comptable', 'auditeur')
 def facture_achat_imprimer(request, pk):
     """Affiche une facture d'achat dans une mise en page imprimable."""
     facture = get_object_or_404(FactureAchat, pk=pk)
@@ -686,7 +696,7 @@ def facture_achat_imprimer(request, pk):
     return render(request, 'impression_facture.html', context)
 
 
-@login_required
+@role_required('comptable', 'auditeur')
 def facture_vente_imprimer(request, pk):
     """Affiche une facture de vente dans une mise en page imprimable."""
     facture = get_object_or_404(FactureVente, pk=pk)
@@ -702,7 +712,7 @@ def facture_vente_imprimer(request, pk):
     return render(request, 'impression_facture.html', context)
 
 
-@login_required
+@role_required('comptable')
 def facture_vente_payee(request, pk):
     """Marque une facture de vente comme payée."""
     facture = get_object_or_404(FactureVente, pk=pk)
@@ -713,7 +723,7 @@ def facture_vente_payee(request, pk):
     return redirect('comptable')
 
 
-@login_required
+@role_required('comptable')
 def facture_vente_annuler(request, pk):
     """Annule une facture de vente."""
     facture = get_object_or_404(FactureVente, pk=pk)
@@ -724,7 +734,7 @@ def facture_vente_annuler(request, pk):
     return redirect('comptable')
 
 
-@login_required
+@user_passes_test(administrateur_requis)
 def parametres_view(request):
     """Page de configuration des paramètres de l'application."""
     instance = ParametreApp.get_instance()
@@ -776,7 +786,8 @@ def utilisateurs_view(request):
     if request.method == 'POST':
         form = UtilisateurForm(request.POST)
         if form.is_valid():
-            form.save()
+            utilisateur = form.save()
+            appliquer_role(utilisateur, form.cleaned_data['role'])
             messages.success(request, 'Utilisateur créé avec succès.')
             return redirect('utilisateurs')
 
@@ -793,7 +804,8 @@ def utilisateur_edit(request, pk):
     utilisateur = get_object_or_404(User, pk=pk)
     form = UtilisateurModificationForm(request.POST or None, instance=utilisateur)
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        utilisateur = form.save()
+        appliquer_role(utilisateur, form.cleaned_data['role'])
         messages.success(request, 'Utilisateur mis à jour avec succès.')
         return redirect('utilisateurs')
     return render(request, 'utilisateur_edit.html', {'form': form, 'utilisateur': utilisateur})

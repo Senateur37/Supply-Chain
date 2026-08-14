@@ -40,6 +40,7 @@
                     <th>Utilisateur</th>
                     <th>Nom complet</th>
                     <th>E-mail</th>
+                    <th>Rôle</th>
                     <th>Dernière connexion</th>
                     <th>Statut</th>
                     <th>Actions</th>
@@ -51,6 +52,16 @@
                     <td>{{ utilisateur.username }}{% if utilisateur.is_superuser %} <span class="badge neutral">Admin</span>{% endif %}</td>
                     <td>{{ utilisateur.get_full_name|default:'—' }}</td>
                     <td>{{ utilisateur.email|default:'—' }}</td>
+                    <td>
+                        {% if utilisateur.groups.first.name == 'admin' %}Administrateur
+                        {% elif utilisateur.groups.first.name == 'gestionnaire_achats' %}Gestionnaire des achats
+                        {% elif utilisateur.groups.first.name == 'magasinier' %}Magasinier
+                        {% elif utilisateur.groups.first.name == 'commercial' %}Commercial
+                        {% elif utilisateur.groups.first.name == 'comptable' %}Comptable
+                        {% elif utilisateur.groups.first.name == 'auditeur' %}Auditeur
+                        {% elif utilisateur.is_staff %}Administrateur
+                        {% else %}Auditeur{% endif %}
+                    </td>
                     <td>{% if utilisateur.last_login %}{{ utilisateur.last_login|date:"d/m/Y H:i" }}{% else %}Jamais{% endif %}</td>
                     <td>{% if utilisateur.is_active %}<span class="badge success">Actif</span>{% else %}<span class="badge neutral">Désactivé</span>{% endif %}</td>
                     <td class="actions">
@@ -74,7 +85,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="6" class="empty">Aucun utilisateur enregistré.</td></tr>
+                <tr><td colspan="7" class="empty">Aucun utilisateur enregistré.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
