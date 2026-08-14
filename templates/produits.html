@@ -49,6 +49,22 @@
                 <label>Stock minimum</label>
                 {{ form.stock_minimum }}
             </div>
+            <div class="form-field">
+                <label>Stock de sécurité</label>
+                {{ form.stock_securite }}
+            </div>
+            <div class="form-field">
+                <label>Stock d'alerte</label>
+                {{ form.stock_alerte }}
+            </div>
+            <div class="form-field">
+                <label>Stock maximum</label>
+                {{ form.stock_maximum }}
+            </div>
+            <div class="form-field">
+                <label>Montant (FCFA)</label>
+                {{ form.montant }}
+            </div>
             <div class="form-field is-full">
                 <label>Description</label>
                 {{ form.description }}
@@ -71,6 +87,10 @@
                     <th>Prix unitaire</th>
                     <th>Unité</th>
                     <th>Stock min.</th>
+                    <th>Stock sécurité</th>
+                    <th>Stock alerte</th>
+                    <th>Stock max.</th>
+                    <th>Montant</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
@@ -83,6 +103,10 @@
                     <td>{{ p.prix_unitaire|floatformat:2 }} FCFA</td>
                     <td>{{ p.get_unite_mesure_display }}</td>
                     <td>{{ p.stock_minimum }}</td>
+                    <td>{{ p.stock_securite }}</td>
+                    <td>{{ p.stock_alerte }}</td>
+                    <td>{{ p.stock_maximum }}</td>
+                    <td>{{ p.montant|floatformat:2 }} FCFA</td>
                     <td>
                         {% if p.actif %}<span class="badge success">Actif</span>
                         {% else %}<span class="badge neutral">Inactif</span>{% endif %}
@@ -96,7 +120,7 @@
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="empty">Aucun produit enregistré.</td></tr>
+                <tr><td colspan="11" class="empty">Aucun produit enregistré.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
