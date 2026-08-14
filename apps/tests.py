@@ -57,6 +57,12 @@ class GestionUtilisateursTests(TestCase):
 		self.assertRedirects(response, reverse('utilisateurs'))
 		self.assertTrue(User.objects.filter(pk=superuser.pk).exists())
 
+	def test_admin_can_delete_regular_user(self):
+		utilisateur = User.objects.create_user('a-supprimer', password='mot-de-passe')
+		response = self.client.post(reverse('utilisateur_delete', args=[utilisateur.pk]))
+		self.assertRedirects(response, reverse('utilisateurs'))
+		self.assertFalse(User.objects.filter(pk=utilisateur.pk).exists())
+
 	def test_non_staff_cannot_access_user_management(self):
 		utilisateur = User.objects.create_user('employe', password='mot-de-passe')
 		self.client.force_login(utilisateur)
