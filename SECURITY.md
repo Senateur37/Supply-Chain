@@ -7,8 +7,8 @@ Définir ces variables dans l'environnement de déploiement, jamais dans le dép
 ```text
 SECRET_KEY=<clé aléatoire longue d'au moins 50 caractères>
 DJANGO_DEBUG=False
-ALLOWED_HOSTS=exemple.com,www.exemple.com
-CSRF_TRUSTED_ORIGINS=https://exemple.com,https://www.exemple.com
+ALLOWED_HOSTS=supply-chain-tsji.onrender.com
+CSRF_TRUSTED_ORIGINS=https://supply-chain-tsji.onrender.com
 SECURE_SSL_REDIRECT=True
 SESSION_COOKIE_SECURE=True
 CSRF_COOKIE_SECURE=True

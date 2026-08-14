@@ -28,7 +28,10 @@ DEBUG = config('DJANGO_DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
+    for host in config(
+        'ALLOWED_HOSTS',
+        default='localhost,127.0.0.1,supply-chain-tsji.onrender.com',
+    ).split(',')
     if host.strip()
 ]
 
@@ -48,7 +51,10 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in config('CSRF_TRUSTED_ORIGINS', default='').split(',')
+    for origin in config(
+        'CSRF_TRUSTED_ORIGINS',
+        default='https://supply-chain-tsji.onrender.com',
+    ).split(',')
     if origin.strip()
 ]
 
