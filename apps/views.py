@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib import messages
-from django.db.models import Sum, Count
+from django.db.models import Q, Sum, Count
 from django.db.models.functions import TruncMonth
 
 from Produits.models import Produit
@@ -140,12 +140,20 @@ def produits_view(request):
             form.save()
             messages.success(request, 'Produit créé avec succès.')
             return redirect('produits')
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '').strip()
     produits = Produit.objects.all()
+    if recherche:
+        produits = produits.filter(Q(reference__icontains=recherche) | Q(designation__icontains=recherche))
+    if statut in ('actif', 'inactif'):
+        produits = produits.filter(actif=statut == 'actif')
     context = {
         'produits': produits,
         'nb_produits': produits.count(),
         'nb_actifs': produits.filter(actif=True).count(),
         'form': form,
+        'recherche': recherche,
+        'statut_filtre': statut,
     }
     return render(request, 'produits.html', context)
 
@@ -224,15 +232,26 @@ def entrepots_view(request):
             form.save()
             messages.success(request, 'Entrepôt créé avec succès.')
             return redirect('entrepots')
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '').strip()
     entrepots = Entrepot.objects.annotate(
         nb_stocks=Count('stocks'),
         stock_total=Sum('stocks__quantite_disponible'),
     )
+    if recherche:
+        entrepots = entrepots.filter(
+            Q(nom__icontains=recherche) | Q(adresse__icontains=recherche) |
+            Q(responsable__icontains=recherche)
+        )
+    if statut in ('actif', 'inactif'):
+        entrepots = entrepots.filter(actif=statut == 'actif')
     context = {
         'entrepots': entrepots,
         'nb_entrepots': entrepots.count(),
         'nb_actifs': entrepots.filter(actif=True).count(),
                 'form': form,
+            'recherche': recherche,
+            'statut_filtre': statut,
     }
     return render(request, 'entrepots.html', context)
 
@@ -285,8 +304,20 @@ def achats_view(request):
                 commande_form.save()
                 messages.success(request, 'Commande d\'achat créée avec succès.')
                 return redirect('achats')
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '').strip()
     fournisseurs = Fournisseur.objects.all()
     commandes = CommandeAchat.objects.select_related('fournisseur').prefetch_related('lignes')
+    if recherche:
+        fournisseurs = fournisseurs.filter(
+            Q(nom__icontains=recherche) | Q(contact__icontains=recherche) |
+            Q(email__icontains=recherche)
+        )
+        commandes = commandes.filter(
+            Q(reference__icontains=recherche) | Q(fournisseur__nom__icontains=recherche)
+        )
+    if statut:
+        commandes = commandes.filter(statut=statut)
     en_attente = commandes.exclude(statut__in=['RECUE', 'ANNULEE']).count()
     context = {
         'fournisseurs': fournisseurs,
@@ -296,6 +327,8 @@ def achats_view(request):
         'en_attente': en_attente,
         'fournisseur_form': fournisseur_form,
         'commande_form': commande_form,
+        'recherche': recherche,
+        'statut_filtre': statut,
     }
     return render(request, 'achats.html', context)
 
@@ -319,8 +352,17 @@ def inventaire_view(request):
             stock.save()
             messages.success(request, 'Mouvement de stock enregistré.')
             return redirect('inventaire')
+    recherche = request.GET.get('q', '').strip()
+    type_mouvement = request.GET.get('type_mouvement', '').strip()
     stocks = Stock.objects.select_related('produit', 'entrepot')
-    mouvements = MouvementStock.objects.select_related('produit', 'entrepot')[:12]
+    mouvements = MouvementStock.objects.select_related('produit', 'entrepot')
+    if recherche:
+        filtre = Q(produit__designation__icontains=recherche) | Q(produit__reference__icontains=recherche) | Q(entrepot__nom__icontains=recherche)
+        stocks = stocks.filter(filtre)
+        mouvements = mouvements.filter(filtre | Q(reference_document__icontains=recherche))
+    if type_mouvement in ('ENTREE', 'SORTIE'):
+        mouvements = mouvements.filter(type_mouvement=type_mouvement)
+    mouvements = mouvements[:12]
     stock_total = stocks.aggregate(t=Sum('quantite_disponible'))['t'] or 0
     context = {
         'stocks': stocks,
@@ -329,6 +371,8 @@ def inventaire_view(request):
         'stock_total': stock_total,
         'nb_mouvements': MouvementStock.objects.count(),
                 'form': form,
+            'recherche': recherche,
+            'type_mouvement_filtre': type_mouvement,
     }
     return render(request, 'inventaire.html', context)
 
@@ -351,8 +395,20 @@ def ventes_view(request):
                 commande_form.save()
                 messages.success(request, 'Commande de vente créée avec succès.')
                 return redirect('ventes')
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '').strip()
     clients = Client.objects.all()
     commandes = CommandeVente.objects.select_related('client').prefetch_related('lignes')
+    if recherche:
+        clients = clients.filter(
+            Q(nom__icontains=recherche) | Q(contact__icontains=recherche) |
+            Q(email__icontains=recherche)
+        )
+        commandes = commandes.filter(
+            Q(reference__icontains=recherche) | Q(client__nom__icontains=recherche)
+        )
+    if statut:
+        commandes = commandes.filter(statut=statut)
     context = {
         'clients': clients,
         'commandes': commandes,
@@ -361,6 +417,8 @@ def ventes_view(request):
         'nb_en_cours': commandes.exclude(statut__in=['LIVREE', 'ANNULEE']).count(),
         'client_form': client_form,
         'commande_form': commande_form,
+        'recherche': recherche,
+        'statut_filtre': statut,
     }
     return render(request, 'ventes.html', context)
 
@@ -418,8 +476,20 @@ def comptable_view(request):
                 messages.success(request, 'Facture de vente créée avec succès.')
                 return redirect('comptable')
 
+    recherche = request.GET.get('q', '').strip()
+    statut = request.GET.get('statut', '').strip()
     factures_achat = FactureAchat.objects.all()
     factures_vente = FactureVente.objects.all()
+    if recherche:
+        factures_achat = factures_achat.filter(
+            Q(reference__icontains=recherche) | Q(commande_achat__reference__icontains=recherche)
+        )
+        factures_vente = factures_vente.filter(
+            Q(reference__icontains=recherche) | Q(commande_vente__reference__icontains=recherche)
+        )
+    if statut:
+        factures_achat = factures_achat.filter(statut=statut)
+        factures_vente = factures_vente.filter(statut=statut)
 
     # Achats
     total_achat = factures_achat.aggregate(t=Sum('montant_ttc'))['t'] or 0
@@ -450,6 +520,8 @@ def comptable_view(request):
         'solde_tva': solde_tva,
         'facture_achat_form': facture_achat_form,
         'facture_vente_form': facture_vente_form,
+        'recherche': recherche,
+        'statut_filtre': statut,
     }
     return render(request, 'comptable.html', context)
 
@@ -791,9 +863,21 @@ def utilisateurs_view(request):
             messages.success(request, 'Utilisateur créé avec succès.')
             return redirect('utilisateurs')
 
+    recherche = request.GET.get('q', '').strip()
+    role = request.GET.get('role', '').strip()
+    utilisateurs = User.objects.order_by('username')
+    if recherche:
+        utilisateurs = utilisateurs.filter(
+            Q(username__icontains=recherche) | Q(first_name__icontains=recherche) |
+            Q(last_name__icontains=recherche) | Q(email__icontains=recherche)
+        )
+    if role:
+        utilisateurs = utilisateurs.filter(groups__name=role).distinct()
     return render(request, 'utilisateurs.html', {
         'form': form,
-        'utilisateurs': User.objects.order_by('username'),
+        'utilisateurs': utilisateurs,
+        'recherche': recherche,
+        'role_filtre': role,
     })
 
 

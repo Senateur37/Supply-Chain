@@ -33,6 +33,11 @@
 
 <div class="panel">
     <h3>Liste des utilisateurs</h3>
+    <form method="get" class="filter-bar">
+        <div class="filter-field"><label for="utilisateurs-q">Rechercher</label><input id="utilisateurs-q" type="search" name="q" value="{{ recherche }}" placeholder="Nom, prénom, e-mail ou identifiant"></div>
+        <div class="filter-field"><label for="utilisateurs-role">Rôle</label><select id="utilisateurs-role" name="role"><option value="">Tous</option><option value="admin" {% if role_filtre == 'admin' %}selected{% endif %}>Administrateur</option><option value="gestionnaire_achats" {% if role_filtre == 'gestionnaire_achats' %}selected{% endif %}>Gestionnaire des achats</option><option value="magasinier" {% if role_filtre == 'magasinier' %}selected{% endif %}>Magasinier</option><option value="commercial" {% if role_filtre == 'commercial' %}selected{% endif %}>Commercial</option><option value="comptable" {% if role_filtre == 'comptable' %}selected{% endif %}>Comptable</option><option value="auditeur" {% if role_filtre == 'auditeur' %}selected{% endif %}>Auditeur</option></select></div>
+        <button type="submit" class="btn btn-primary">Filtrer</button><a href="{% url 'utilisateurs' %}" class="btn btn-outline">Réinitialiser</a>
+    </form>
     <div class="table-wrap">
         <table>
             <thead>

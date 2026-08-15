@@ -78,6 +78,11 @@
 
 <div class="panel">
     <h3>Liste des produits</h3>
+    <form method="get" class="filter-bar">
+        <div class="filter-field"><label for="produits-q">Rechercher</label><input id="produits-q" type="search" name="q" value="{{ recherche }}" placeholder="Référence ou désignation"></div>
+        <div class="filter-field"><label for="produits-statut">Statut</label><select id="produits-statut" name="statut"><option value="">Tous</option><option value="actif" {% if statut_filtre == 'actif' %}selected{% endif %}>Actifs</option><option value="inactif" {% if statut_filtre == 'inactif' %}selected{% endif %}>Inactifs</option></select></div>
+        <button type="submit" class="btn btn-primary">Filtrer</button><a href="{% url 'produits' %}" class="btn btn-outline">Réinitialiser</a>
+    </form>
     <div class="table-wrap">
         <table>
 <thead>

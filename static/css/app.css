@@ -374,6 +374,42 @@ tbody tr:hover { background: #f8fafd; }
 .field-help { color: var(--muted); font-size: .75rem; margin-top: 4px; }
 .form-actions { margin-top: 16px; }
 
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.filter-bar .filter-field {
+    min-width: 190px;
+    flex: 1 1 220px;
+}
+
+.filter-bar label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted);
+    font-size: .82rem;
+    font-weight: 600;
+}
+
+.filter-bar input,
+.filter-bar select {
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--card);
+    color: var(--text);
+}
+
 /* ===== Messages ===== */
 .messages { margin-bottom: 18px; }
 .messages .alert.success { background: #eafaf1; border: 1px solid #b7e6cb; color: var(--success); }

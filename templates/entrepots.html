@@ -57,6 +57,11 @@
 
 <div class="panel">
     <h3>Liste des entrepôts</h3>
+    <form method="get" class="filter-bar">
+        <div class="filter-field"><label for="entrepots-q">Rechercher</label><input id="entrepots-q" type="search" name="q" value="{{ recherche }}" placeholder="Nom, adresse ou responsable"></div>
+        <div class="filter-field"><label for="entrepots-statut">Statut</label><select id="entrepots-statut" name="statut"><option value="">Tous</option><option value="actif" {% if statut_filtre == 'actif' %}selected{% endif %}>Actifs</option><option value="inactif" {% if statut_filtre == 'inactif' %}selected{% endif %}>Inactifs</option></select></div>
+        <button type="submit" class="btn btn-primary">Filtrer</button><a href="{% url 'entrepots' %}" class="btn btn-outline">Réinitialiser</a>
+    </form>
 <div class="table-wrap">
         <table>
             <thead>

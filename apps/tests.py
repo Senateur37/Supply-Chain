@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.test import TestCase
 from django.urls import reverse
+from Produits.models import Produit
 
 
 User = get_user_model()
@@ -68,3 +69,10 @@ class GestionUtilisateursTests(TestCase):
 		self.client.force_login(utilisateur)
 		response = self.client.get(reverse('utilisateurs'))
 		self.assertNotEqual(response.status_code, 200)
+
+	def test_product_search_filters_results(self):
+		Produit.objects.create(reference='REF-001', designation='Sac de riz', prix_unitaire=1000)
+		Produit.objects.create(reference='REF-002', designation='Huile alimentaire', prix_unitaire=2000)
+		response = self.client.get(reverse('produits'), {'q': 'riz'})
+		self.assertContains(response, 'Sac de riz')
+		self.assertNotContains(response, 'Huile alimentaire')

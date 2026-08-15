@@ -95,6 +95,11 @@
 
 <div class="panel">
     <h3>Clients</h3>
+    <form method="get" class="filter-bar">
+        <div class="filter-field"><label for="ventes-q">Rechercher</label><input id="ventes-q" type="search" name="q" value="{{ recherche }}" placeholder="Client ou référence commande"></div>
+        <div class="filter-field"><label for="ventes-statut">Statut commande</label><select id="ventes-statut" name="statut"><option value="">Tous</option><option value="BROUILLON" {% if statut_filtre == 'BROUILLON' %}selected{% endif %}>Brouillon</option><option value="EN_COURS" {% if statut_filtre == 'EN_COURS' %}selected{% endif %}>En cours</option><option value="LIVREE" {% if statut_filtre == 'LIVREE' %}selected{% endif %}>Livrées</option><option value="ANNULEE" {% if statut_filtre == 'ANNULEE' %}selected{% endif %}>Annulées</option></select></div>
+        <button type="submit" class="btn btn-primary">Filtrer</button><a href="{% url 'ventes' %}" class="btn btn-outline">Réinitialiser</a>
+    </form>
     <div class="table-wrap">
         <table>
             <thead>

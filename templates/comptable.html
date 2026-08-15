@@ -144,6 +144,11 @@
 
 <div class="panel">
     <h3>Factures d'achat</h3>
+    <form method="get" class="filter-bar">
+        <div class="filter-field"><label for="comptable-q">Rechercher</label><input id="comptable-q" type="search" name="q" value="{{ recherche }}" placeholder="Référence de facture ou commande"></div>
+        <div class="filter-field"><label for="comptable-statut">Statut</label><select id="comptable-statut" name="statut"><option value="">Tous</option><option value="IMPAYEE" {% if statut_filtre == 'IMPAYEE' %}selected{% endif %}>Impayées</option><option value="PAYEE" {% if statut_filtre == 'PAYEE' %}selected{% endif %}>Payées</option><option value="ANNULEE" {% if statut_filtre == 'ANNULEE' %}selected{% endif %}>Annulées</option><option value="CONTESTEE" {% if statut_filtre == 'CONTESTEE' %}selected{% endif %}>Contestées</option></select></div>
+        <button type="submit" class="btn btn-primary">Filtrer</button><a href="{% url 'comptable' %}" class="btn btn-outline">Réinitialiser</a>
+    </form>
     <div class="table-wrap">
         <table>
             <thead>
