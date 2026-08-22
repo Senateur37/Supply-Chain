@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load l10n %}
 {% block title %}Suivi GPS Dynamique {{ suivi.numero_suivi }} | Supply Chain{% endblock %}
 {% block heading %}Suivi GPS Temps Réel : {{ suivi.numero_suivi }}{% endblock %}
 
@@ -338,11 +339,23 @@
 <!-- LEAFLET.JS CARTE ET MOTEUR DE SIMULATION DYNAMIQUE -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Coordonnées des 3 pôles principaux
-    const posFournisseur = [{{ suivi.lat_fournisseur }}, {{ suivi.lng_fournisseur }}];
-    const posEntrepot = [{{ suivi.lat_entrepot }}, {{ suivi.lng_entrepot }}];
-    const posClient = [{{ suivi.lat_client }}, {{ suivi.lng_client }}];
-    let posActuelle = [{{ suivi.lat_actuelle }}, {{ suivi.lng_actuelle }}];
+    // Coordonnées des 3 pôles principaux (bulletproof contre les virgules de la locale fr-fr)
+    const posFournisseur = [
+        parseFloat("{{ suivi.lat_fournisseur|default:'12.6392' }}".replace(',', '.')),
+        parseFloat("{{ suivi.lng_fournisseur|default:'-8.0029' }}".replace(',', '.'))
+    ];
+    const posEntrepot = [
+        parseFloat("{{ suivi.lat_entrepot|default:'12.6450' }}".replace(',', '.')),
+        parseFloat("{{ suivi.lng_entrepot|default:'-7.9950' }}".replace(',', '.'))
+    ];
+    const posClient = [
+        parseFloat("{{ suivi.lat_client|default:'12.6550' }}".replace(',', '.')),
+        parseFloat("{{ suivi.lng_client|default:'-7.9750' }}".replace(',', '.'))
+    ];
+    let posActuelle = [
+        parseFloat("{{ suivi.lat_actuelle|default:'12.6392' }}".replace(',', '.')),
+        parseFloat("{{ suivi.lng_actuelle|default:'-8.0029' }}".replace(',', '.'))
+    ];
 
     const mapContainer = document.getElementById('gps-map');
     if (!mapContainer) return;
@@ -354,17 +367,26 @@ document.addEventListener('DOMContentLoaded', function() {
         zoomControl: true
     });
 
-    // Tuiles OpenStreetMap fiables avec fallback
-    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-    L.tileLayer(tileUrl, {
+    // Tuiles cartographiques multi-serveurs avec fallback automatique
+    const tileUrlCarto = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const tileUrlOSM = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    
+    let activeTiles = L.tileLayer(tileUrlCarto, {
         maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+        subdomains: 'abcd',
+        attribution: '© OpenStreetMap contributors © CARTO'
     }).addTo(map);
 
-    // Invalider la taille de la carte pour forcer le rendu immédiat des tuiles
-    setTimeout(function() {
-        map.invalidateSize();
-    }, 250);
+    activeTiles.on('tileerror', function() {
+        console.warn("Mise en place des tuiles OpenStreetMap de secours...");
+        L.tileLayer(tileUrlOSM, { maxZoom: 19 }).addTo(map);
+    });
+
+    // Invalider la taille de la carte à plusieurs reprises pour forcer le rendu des tuiles
+    [100, 300, 600, 1200].forEach(function(delay) {
+        setTimeout(function() { map.invalidateSize(); }, delay);
+    });
+    window.addEventListener('resize', function() { map.invalidateSize(); });
 
     // Icônes personnalisées Leaflet
     const createIcon = (emoji, bgColor, isPulse = false) => L.divIcon({
