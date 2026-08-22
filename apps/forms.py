@@ -7,7 +7,7 @@ from Achats.models import Fournisseur, CommandeAchat
 from Ventes.models import Client, CommandeVente
 from Inventaire.models import Stock, MouvementStock
 from Comptable.models import FactureAchat, FactureVente
-from .models import ParametreApp, UserProfile
+from .models import ParametreApp, UserProfile, SuiviExpedition, EtapeSuivi
 from .permissions import ROLE_CHOICES
 
 
@@ -250,3 +250,56 @@ class UserProfileForm(forms.ModelForm):
             'telephone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+225 00 00 00 00'}),
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Courte présentation (optionnel)'}),
         }
+
+
+class SuiviExpeditionForm(forms.ModelForm):
+    """Formulaire pour créer ou modifier un suivi de produit Fournisseur -> Client."""
+
+    class Meta:
+        model = SuiviExpedition
+        fields = [
+            'numero_suivi', 'produit', 'quantite', 'fournisseur', 'entrepot', 'client',
+            'commande_achat', 'commande_vente', 'statut',
+            'transporteur', 'immatriculation_vehicule', 'nom_chauffeur', 'telephone_chauffeur',
+            'lat_fournisseur', 'lng_fournisseur', 'lat_entrepot', 'lng_entrepot', 'lat_client', 'lng_client',
+            'date_expedition', 'date_livraison_estimee',
+        ]
+        widgets = {
+            'numero_suivi': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex. TRK-20260822-001'}),
+            'produit': forms.Select(attrs={'class': 'form-control'}),
+            'quantite': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
+            'fournisseur': forms.Select(attrs={'class': 'form-control'}),
+            'entrepot': forms.Select(attrs={'class': 'form-control'}),
+            'client': forms.Select(attrs={'class': 'form-control'}),
+            'commande_achat': forms.Select(attrs={'class': 'form-control'}),
+            'commande_vente': forms.Select(attrs={'class': 'form-control'}),
+            'statut': forms.Select(attrs={'class': 'form-control'}),
+            'transporteur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex. Logistique Express'}),
+            'immatriculation_vehicule': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex. M-1234-BK'}),
+            'nom_chauffeur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du chauffeur'}),
+            'telephone_chauffeur': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+223 70 00 00 00'}),
+            'lat_fournisseur': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lng_fournisseur': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lat_entrepot': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lng_entrepot': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lat_client': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lng_client': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'date_expedition': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+            'date_livraison_estimee': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'}),
+        }
+
+
+class MiseAJourPositionGPSForm(forms.ModelForm):
+    """Formulaire rapide de mise à jour GPS et statut."""
+
+    class Meta:
+        model = SuiviExpedition
+        fields = ['statut', 'lat_actuelle', 'lng_actuelle', 'vitesse_kmh', 'progression_pct']
+        widgets = {
+            'statut': forms.Select(attrs={'class': 'form-control'}),
+            'lat_actuelle': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'lng_actuelle': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.000001'}),
+            'vitesse_kmh': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.1'}),
+            'progression_pct': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '100'}),
+        }
+

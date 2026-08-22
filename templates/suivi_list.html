@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Suivi GPS des Produits | Supply Chain{% endblock %}
+{% block heading %}Suivi des Expéditions & Trajet GPS{% endblock %}
+
+{% block content %}
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+    <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- KPIs & Statistiques -->
+<div class="cards" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+    <div class="card kpi">
+        <div class="kpi-label">Total Expéditions</div>
+        <div class="kpi-value">{{ stats.total }}</div>
+    </div>
+    <div class="card kpi" style="border-left: 4px solid #f39c12;">
+        <div class="kpi-label">1. Chez Fournisseur</div>
+        <div class="kpi-value">{{ stats.fournisseur }}</div>
+    </div>
+    <div class="card kpi" style="border-left: 4px solid #3498db;">
+        <div class="kpi-label">2. Transit Entrepôt</div>
+        <div class="kpi-value">{{ stats.transit_entrepot }}</div>
+    </div>
+    <div class="card kpi" style="border-left: 4px solid #9b59b6;">
+        <div class="kpi-label">3. En Stock Entrepôt</div>
+        <div class="kpi-value">{{ stats.entrepot }}</div>
+    </div>
+    <div class="card kpi" style="border-left: 4px solid #e67e22;">
+        <div class="kpi-label">4. Transit Client</div>
+        <div class="kpi-value">{{ stats.transit_client }}</div>
+    </div>
+    <div class="card kpi" style="border-left: 4px solid #2ecc71;">
+        <div class="kpi-label">5. Livrés</div>
+        <div class="kpi-value">{{ stats.livre }}</div>
+    </div>
+</div>
+
+<!-- En-tête avec Recherche et Bouton Créer -->
+<div class="panel" style="margin-top: 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+        <h3 style="margin: 0;">Expéditions en Cours & Historique Trajets</h3>
+        <a href="{% url 'suivi_create' %}" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.5rem;">
+            <span>➕</span> Nouvelle Expédition
+        </a>
+    </div>
+
+    <!-- Formulaire de recherche et filtre -->
+    <form method="get" class="filter-form" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; background: rgba(0,0,0,0.02); padding: 1rem; border-radius: 8px;">
+        <div style="flex: 1; min-width: 200px;">
+            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Rechercher N° suivi, produit, client, transporteur...">
+        </div>
+        <div style="width: 220px;">
+            <select name="statut" class="form-control">
+                <option value="">Tous les statuts</option>
+                {% for val, label in statut_choices %}
+                <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-secondary">Filtrer</button>
+        {% if query or statut_filtre %}
+        <a href="{% url 'suivi_list' %}" class="btn btn-light">Réinitialiser</a>
+        {% endif %}
+    </form>
+
+    <!-- Tableau des expéditions -->
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>N° Suivi</th>
+                    <th>Produit</th>
+                    <th>Fournisseur ➔ Client</th>
+                    <th>Transporteur / Camion</th>
+                    <th>Statut & Progression</th>
+                    <th>GPS Actuel</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in suivis %}
+                <tr>
+                    <td>
+                        <strong style="color: var(--primary);">{{ s.numero_suivi }}</strong><br>
+                        <small style="color: #666;">Créé le {{ s.created_at|date:"d/m/Y H:i" }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ s.produit.designation }}</strong><br>
+                        <span class="badge badge-outline">Qté: {{ s.quantite }}</span>
+                    </td>
+                    <td>
+                        <small>🏭 {{ s.fournisseur.nom|default:"Non spécifié" }}</small><br>
+                        <small>🏬 {{ s.entrepot.nom|default:"Stock" }}</small><br>
+                        <small>🏡 {{ s.client.nom|default:"Client" }}</small>
+                    </td>
+                    <td>
+                        <span>{{ s.transporteur }}</span><br>
+                        <small style="color: #666;">🚛 {{ s.immatriculation_vehicule }} ({{ s.nom_chauffeur }})</small>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if s.statut == '1_FOURNISSEUR' %}badge-warning
+                            {% elif s.statut == '2_TRANSIT_ENTREPOT' %}badge-info
+                            {% elif s.statut == '3_ENTREPOT' %}badge-purple
+                            {% elif s.statut == '4_TRANSIT_CLIENT' %}badge-orange
+                            {% elif s.statut == '5_LIVRE' %}badge-success{% endif %}">
+                            {{ s.get_statut_display }}
+                        </span>
+                        <div style="margin-top: 6px; background: #e0e0e0; border-radius: 10px; height: 8px; overflow: hidden; width: 100%;">
+                            <div style="width: {{ s.progression_pct }}%; background: var(--accent); height: 100%; transition: width 0.3s;"></div>
+                        </div>
+                        <small style="font-size: 0.75rem; color: #666;">Progression : {{ s.progression_pct }}%</small>
+                    </td>
+                    <td>
+                        <small style="font-family: monospace;">📍 {{ s.lat_actuelle|floatformat:4 }}, {{ s.lng_actuelle|floatformat:4 }}</small><br>
+                        <small style="color: #0EA5A4;">⚡ {{ s.vitesse_kmh }} km/h</small>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 0.4rem; align-items: center;">
+                            <a href="{% url 'suivi_detail' s.pk %}" class="btn btn-sm btn-primary" title="Carte GPS Live">
+                                📍 GPS Live
+                            </a>
+                            <a href="{% url 'suivi_edit' s.pk %}" class="btn btn-sm btn-secondary" title="Modifier">
+                                ✏️
+                            </a>
+                            <form method="post" action="{% url 'suivi_delete' s.pk %}" style="display:inline;" onsubmit="return confirm('Supprimer cette expédition ?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger" title="Supprimer">🗑️</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="text-align: center; padding: 2rem; color: #777;">
+                        Aucun suivi d'expédition trouvé. <a href="{% url 'suivi_create' %}">Créer la première expédition</a>.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

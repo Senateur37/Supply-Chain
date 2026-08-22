@@ -1,12 +1,14 @@
 import json
 import logging
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.db.models import Q, Sum, Count
 from django.db.models.functions import TruncMonth
+from django.utils import timezone
 
 from Produits.models import Produit
 from Entrepots.models import Entrepot
@@ -19,8 +21,9 @@ from .forms import (
     CommandeAchatForm, CommandeVenteForm, MouvementStockForm,
     FactureAchatForm, FactureVenteForm, ParametreAppForm, UserProfileForm,
     UtilisateurForm, UtilisateurModificationForm,
+    SuiviExpeditionForm, MiseAJourPositionGPSForm,
 )
-from .models import ParametreApp, UserProfile
+from .models import ParametreApp, UserProfile, SuiviExpedition, EtapeSuivi, PositionGPSHistorique
 from .permissions import role_required
 
 
@@ -926,3 +929,267 @@ def utilisateur_delete(request, pk):
             utilisateur.delete()
             messages.success(request, f'Utilisateur {nom} supprimé.')
     return redirect('utilisateurs')
+
+
+# ==========================================
+# VUES SUIVI DE PRODUIT ET GÉOLOCALISATION GPS
+# ==========================================
+
+@login_required
+def suivi_list_view(request):
+    """Liste et tableau de bord des suivis d'expéditions du fournisseur au client."""
+    query = request.GET.get('q', '').strip()
+    statut_filtre = request.GET.get('statut', '').strip()
+
+    suivis = SuiviExpedition.objects.select_related(
+        'produit', 'fournisseur', 'entrepot', 'client', 'commande_achat', 'commande_vente'
+    ).all()
+
+    if query:
+        suivis = suivis.filter(
+            Q(numero_suivi__icontains=query) |
+            Q(produit__designation__icontains=query) |
+            Q(fournisseur__nom__icontains=query) |
+            Q(client__nom__icontains=query) |
+            Q(transporteur__icontains=query) |
+            Q(immatriculation_vehicule__icontains=query)
+        )
+
+    if statut_filtre:
+        suivis = suivis.filter(statut=statut_filtre)
+
+    # Statistiques
+    all_suivis = SuiviExpedition.objects.all()
+    stats = {
+        'total': all_suivis.count(),
+        'fournisseur': all_suivis.filter(statut='1_FOURNISSEUR').count(),
+        'transit_entrepot': all_suivis.filter(statut='2_TRANSIT_ENTREPOT').count(),
+        'entrepot': all_suivis.filter(statut='3_ENTREPOT').count(),
+        'transit_client': all_suivis.filter(statut='4_TRANSIT_CLIENT').count(),
+        'livre': all_suivis.filter(statut='5_LIVRE').count(),
+    }
+
+    return render(request, 'suivi_list.html', {
+        'suivis': suivis,
+        'query': query,
+        'statut_filtre': statut_filtre,
+        'stats': stats,
+        'statut_choices': SuiviExpedition.STATUT_CHOICES,
+    })
+
+
+@login_required
+def suivi_detail_view(request, pk):
+    """Vue détaillée d'un suivi avec carte Leaflet.js interactive et simulation GPS."""
+    suivi = get_object_or_404(
+        SuiviExpedition.objects.select_related(
+            'produit', 'fournisseur', 'entrepot', 'client', 'commande_achat', 'commande_vente'
+        ).prefetch_related('etapes', 'historique_positions'),
+        pk=pk
+    )
+
+    form_position = MiseAJourPositionGPSForm(instance=suivi)
+
+    if request.method == 'POST':
+        form_position = MiseAJourPositionGPSForm(request.POST, instance=suivi)
+        if form_position.is_valid():
+            ancien_statut = suivi.statut
+            updated_suivi = form_position.save()
+
+            # Enregistrer dans l'historique GPS
+            PositionGPSHistorique.objects.create(
+                expedition=updated_suivi,
+                latitude=updated_suivi.lat_actuelle,
+                longitude=updated_suivi.lng_actuelle,
+                vitesse=updated_suivi.vitesse_kmh
+            )
+
+            # Si le statut a changé, ajouter une étape automatique dans le journal
+            if ancien_statut != updated_suivi.statut:
+                libelle_statut = dict(SuiviExpedition.STATUT_CHOICES).get(updated_suivi.statut, updated_suivi.statut)
+                EtapeSuivi.objects.create(
+                    expedition=updated_suivi,
+                    code_etape=updated_suivi.statut,
+                    titre=f"Changement d'étape : {libelle_statut}",
+                    description=f"Statut mis à jour manuellement par {request.user.username}.",
+                    latitude=updated_suivi.lat_actuelle,
+                    longitude=updated_suivi.lng_actuelle,
+                    est_terminee=True
+                )
+
+            messages.success(request, 'Position GPS et statut mis à jour.')
+            return redirect('suivi_detail', pk=suivi.pk)
+
+    etapes = suivi.etapes.all()
+    historique_positions = suivi.historique_positions.all()[:50]
+
+    return render(request, 'suivi_detail.html', {
+        'suivi': suivi,
+        'form_position': form_position,
+        'etapes': etapes,
+        'historique_positions': historique_positions,
+        'statut_choices': dict(SuiviExpedition.STATUT_CHOICES),
+    })
+
+
+@login_required
+def suivi_create_view(request):
+    """Créer une nouvelle expédition de produit."""
+    if request.method == 'POST':
+        form = SuiviExpeditionForm(request.POST)
+        if form.is_valid():
+            suivi = form.save(commit=False)
+            if not suivi.numero_suivi:
+                date_str = timezone.now().strftime('%Y%m%d')
+                cnt = SuiviExpedition.objects.count() + 1
+                suivi.numero_suivi = f'TRK-{date_str}-{cnt:03d}'
+            suivi.date_expedition = timezone.now()
+            suivi.save()
+
+            # Création du 1er jalon d'étape
+            fournisseur_nom = suivi.fournisseur.nom if suivi.fournisseur else 'Fournisseur'
+            EtapeSuivi.objects.create(
+                expedition=suivi,
+                code_etape='1_FOURNISSEUR',
+                titre='Commande enregistrée chez le fournisseur',
+                description=f'Prise en charge initiale du produit {suivi.produit.designation} chez {fournisseur_nom}.',
+                lieu=fournisseur_nom,
+                latitude=suivi.lat_fournisseur,
+                longitude=suivi.lng_fournisseur,
+                est_terminee=True
+            )
+
+            messages.success(request, f'Expédition {suivi.numero_suivi} créée avec succès.')
+            return redirect('suivi_detail', pk=suivi.pk)
+    else:
+        initial_data = {}
+        date_str = timezone.now().strftime('%Y%m%d')
+        cnt = SuiviExpedition.objects.count() + 1
+        initial_data['numero_suivi'] = f'TRK-{date_str}-{cnt:03d}'
+        form = SuiviExpeditionForm(initial=initial_data)
+
+    return render(request, 'suivi_form.html', {
+        'form': form,
+        'titre_page': 'Créer un nouveau suivi d\'expédition',
+        'bouton_label': 'Créer l\'expédition',
+    })
+
+
+@login_required
+def suivi_edit_view(request, pk):
+    """Modifier les détails d'un suivi d'expédition."""
+    suivi = get_object_or_404(SuiviExpedition, pk=pk)
+    if request.method == 'POST':
+        form = SuiviExpeditionForm(request.POST, instance=suivi)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Suivi {suivi.numero_suivi} mis à jour.')
+            return redirect('suivi_detail', pk=suivi.pk)
+    else:
+        form = SuiviExpeditionForm(instance=suivi)
+
+    return render(request, 'suivi_form.html', {
+        'form': form,
+        'suivi': suivi,
+        'titre_page': f'Modifier le suivi {suivi.numero_suivi}',
+        'bouton_label': 'Enregistrer les modifications',
+    })
+
+
+@login_required
+def suivi_delete_view(request, pk):
+    """Supprimer un suivi d'expédition."""
+    suivi = get_object_or_404(SuiviExpedition, pk=pk)
+    if request.method == 'POST':
+        num = suivi.numero_suivi
+        suivi.delete()
+        messages.success(request, f'Suivi {num} supprimé avec succès.')
+        return redirect('suivi_list')
+    return redirect('suivi_detail', pk=pk)
+
+
+@login_required
+def suivi_update_gps_api(request, pk):
+    """API JSON POST pour la mise à jour GPS en temps réel depuis le simulateur ou un tracker."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST requis'}, status=405)
+
+    suivi = get_object_or_404(SuiviExpedition, pk=pk)
+    try:
+        data = json.loads(request.body)
+        lat = float(data.get('lat', suivi.lat_actuelle))
+        lng = float(data.get('lng', suivi.lng_actuelle))
+        vitesse = float(data.get('vitesse', suivi.vitesse_kmh))
+        progression = int(data.get('progression', suivi.progression_pct))
+        nouveau_statut = data.get('statut', suivi.statut)
+
+        ancien_statut = suivi.statut
+        suivi.lat_actuelle = lat
+        suivi.lng_actuelle = lng
+        suivi.vitesse_kmh = vitesse
+        suivi.progression_pct = min(100, max(0, progression))
+
+        if nouveau_statut in dict(SuiviExpedition.STATUT_CHOICES):
+            suivi.statut = nouveau_statut
+            if nouveau_statut == '5_LIVRE' and not suivi.date_livraison_effective:
+                suivi.date_livraison_effective = timezone.now()
+
+        suivi.save()
+
+        # Enregistrer la position historique
+        PositionGPSHistorique.objects.create(
+            expedition=suivi,
+            latitude=lat,
+            longitude=lng,
+            vitesse=vitesse
+        )
+
+        # Si le statut a évolué, créer un jalon d'étape
+        if ancien_statut != suivi.statut:
+            libelle = dict(SuiviExpedition.STATUT_CHOICES).get(suivi.statut, suivi.statut)
+            EtapeSuivi.objects.create(
+                expedition=suivi,
+                code_etape=suivi.statut,
+                titre=f"Étape atteinte : {libelle}",
+                description=f"Le véhicule a franchi l'étape à la position GPS ({lat:.4f}, {lng:.4f})",
+                latitude=lat,
+                longitude=lng,
+                est_terminee=True
+            )
+
+        return JsonResponse({
+            'status': 'success',
+            'numero_suivi': suivi.numero_suivi,
+            'lat': suivi.lat_actuelle,
+            'lng': suivi.lng_actuelle,
+            'vitesse_kmh': suivi.vitesse_kmh,
+            'progression_pct': suivi.progression_pct,
+            'statut': suivi.statut,
+            'statut_display': suivi.get_statut_display(),
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
+@login_required
+def suivi_ajouter_etape(request, pk):
+    """Ajouter manuellement une étape au journal de suivi."""
+    suivi = get_object_or_404(SuiviExpedition, pk=pk)
+    if request.method == 'POST':
+        titre = request.POST.get('titre', '').strip()
+        description = request.POST.get('description', '').strip()
+        lieu = request.POST.get('lieu', '').strip()
+        if titre:
+            EtapeSuivi.objects.create(
+                expedition=suivi,
+                code_etape=suivi.statut,
+                titre=titre,
+                description=description,
+                lieu=lieu,
+                latitude=suivi.lat_actuelle,
+                longitude=suivi.lng_actuelle,
+                est_terminee=True
+            )
+            messages.success(request, 'Nouvelle étape ajoutée au journal.')
+    return redirect('suivi_detail', pk=pk)
+

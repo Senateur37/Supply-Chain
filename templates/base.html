@@ -30,6 +30,9 @@
         })();
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Leaflet.js pour cartes GPS en temps réel -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div class="layout">
@@ -69,6 +72,9 @@
                 <span class="icon">💰</span><span>Ventes</span>
             </a>
             {% endif %}
+            <a href="{% url 'suivi_list' %}" class="{% if 'suivi' in request.resolver_match.url_name %}active{% endif %}">
+                <span class="icon">📍</span><span>Suivi GPS</span>
+            </a>
             {% if is_admin or 'comptable' in user_roles or 'auditeur' in user_roles %}
             <a href="{% url 'comptable' %}" class="{% if request.resolver_match.url_name == 'comptable' %}active{% endif %}">
                 <span class="icon">🧾</span><span>Comptable</span>

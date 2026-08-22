@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}{{ titre_page }} | Supply Chain{% endblock %}
+{% block heading %}{{ titre_page }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <a href="{% url 'suivi_list' %}" class="btn btn-secondary">← Annuler et retour</a>
+</div>
+
+<div class="panel" style="background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 900px; margin: 0 auto;">
+    <h3 style="margin-top: 0; color: var(--primary); border-bottom: 2px solid #f0f0f0; padding-bottom: 0.8rem; margin-bottom: 1.5rem;">
+        📍 Formulaire d'Expédition et Géolocalisation
+    </h3>
+
+    <form method="post">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="alert alert-danger" style="margin-bottom: 1.5rem;">
+            Veuillez corriger les erreurs ci-dessous.
+        </div>
+        {% endif %}
+
+        <!-- Section 1 : Informations Produit & Pôles -->
+        <h4 style="color: var(--accent); font-size: 1.1rem; margin-bottom: 1rem;">1. Produit & Intervenants Supply Chain</h4>
+        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="form-field">
+                <label style="font-weight: 600;">Code N° Suivi</label>
+                {{ form.numero_suivi }}
+                {% if form.numero_suivi.errors %}<div class="field-error" style="color:red; font-size:0.8rem;">{{ form.numero_suivi.errors|join:", " }}</div>{% endif %}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Produit à suivre *</label>
+                {{ form.produit }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Quantité</label>
+                {{ form.quantite }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Statut initial</label>
+                {{ form.statut }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Fournisseur (Origine)</label>
+                {{ form.fournisseur }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Entrepôt (Hub de stock)</label>
+                {{ form.entrepot }}
+            </div>
+            <div class="form-field" style="grid-column: span 2;">
+                <label style="font-weight: 600;">Client (Destination Finale)</label>
+                {{ form.client }}
+            </div>
+        </div>
+
+        <!-- Section 2 : Transport & Véhicule -->
+        <h4 style="color: var(--accent); font-size: 1.1rem; margin-bottom: 1rem;">2. Transporteur & Chauffeur</h4>
+        <div class="form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="form-field">
+                <label style="font-weight: 600;">Nom du Transporteur</label>
+                {{ form.transporteur }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Immatriculation Camion</label>
+                {{ form.immatriculation_vehicule }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Nom du Chauffeur</label>
+                {{ form.nom_chauffeur }}
+            </div>
+            <div class="form-field">
+                <label style="font-weight: 600;">Téléphone Chauffeur</label>
+                {{ form.telephone_chauffeur }}
+            </div>
+        </div>
+
+        <!-- Section 3 : Coordonnées GPS des Pôles -->
+        <h4 style="color: var(--accent); font-size: 1.1rem; margin-bottom: 1rem;">3. Coordonnées Géographiques GPS (Lat / Lng)</h4>
+        <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border: 1px solid #eee;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: bold;">🏭 Fournisseur</label>
+                    <div style="margin-top: 0.3rem;">
+                        <small>Lat:</small> {{ form.lat_fournisseur }}
+                        <small>Lng:</small> {{ form.lng_fournisseur }}
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: bold;">🏬 Entrepôt</label>
+                    <div style="margin-top: 0.3rem;">
+                        <small>Lat:</small> {{ form.lat_entrepot }}
+                        <small>Lng:</small> {{ form.lng_entrepot }}
+                    </div>
+                </div>
+                <div>
+                    <label style="font-size: 0.85rem; font-weight: bold;">🏡 Client</label>
+                    <div style="margin-top: 0.3rem;">
+                        <small>Lat:</small> {{ form.lat_client }}
+                        <small>Lng:</small> {{ form.lng_client }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <a href="{% url 'suivi_list' %}" class="btn btn-light">Annuler</a>
+            <button type="submit" class="btn btn-primary" style="padding: 0.6rem 2rem;">{{ bouton_label }}</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -30,4 +30,13 @@ urlpatterns = [
     path('utilisateurs/<int:pk>/modifier/', views.utilisateur_edit, name='utilisateur_edit'),
     path('utilisateurs/<int:pk>/statut/', views.utilisateur_toggle_actif, name='utilisateur_toggle_actif'),
     path('utilisateurs/<int:pk>/supprimer/', views.utilisateur_delete, name='utilisateur_delete'),
+    # Suivi Produit & GPS
+    path('suivi/', views.suivi_list_view, name='suivi_list'),
+    path('suivi/creer/', views.suivi_create_view, name='suivi_create'),
+    path('suivi/<int:pk>/', views.suivi_detail_view, name='suivi_detail'),
+    path('suivi/<int:pk>/modifier/', views.suivi_edit_view, name='suivi_edit'),
+    path('suivi/<int:pk>/supprimer/', views.suivi_delete_view, name='suivi_delete'),
+    path('suivi/<int:pk>/api/update-gps/', views.suivi_update_gps_api, name='suivi_update_gps_api'),
+    path('suivi/<int:pk>/ajouter-etape/', views.suivi_ajouter_etape, name='suivi_ajouter_etape'),
 ]
+
