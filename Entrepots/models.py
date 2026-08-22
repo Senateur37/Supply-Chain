@@ -7,6 +7,8 @@ class Entrepot(models.Model):
     responsable = models.CharField(max_length=150)
     telephone = models.CharField(max_length=20, blank=True)
     capacite_totale = models.PositiveIntegerField(help_text='Capacité maximale en unités de stockage')
+    latitude = models.FloatField(default=12.6450, help_text='Latitude GPS du dépôt/entrepôt')
+    longitude = models.FloatField(default=-7.9950, help_text='Longitude GPS du dépôt/entrepôt')
     actif = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

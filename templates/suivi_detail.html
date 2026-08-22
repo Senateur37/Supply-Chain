@@ -157,6 +157,7 @@
                 <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
                     <select id="user-role-select" class="form-control" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.85rem;">
                         <option value="vehicule" selected>🚚 Je suis le Chauffeur / Véhicule</option>
+                        <option value="entrepot">🏬 Je suis le Dépôt / Entrepôt</option>
                         <option value="fournisseur">🏭 Je suis le Fournisseur (Origine)</option>
                         <option value="client">🏡 Je suis le Client (Destination)</option>
                     </select>
@@ -741,6 +742,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 }).then(r => r.json()).then(data => {
                     if (selectedRole === 'fournisseur') {
                         mFournisseur.setLatLng([lat, lng]);
+                    } else if (selectedRole === 'entrepot') {
+                        mEntrepot.setLatLng([lat, lng]);
                     } else if (selectedRole === 'client') {
                         mClient.setLatLng([lat, lng]);
                     } else {
@@ -809,6 +812,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 mFournisseur.setLatLng([clickedLat, clickedLng]);
                 posFournisseur[0] = clickedLat;
                 posFournisseur[1] = clickedLng;
+            } else if (selectedRole === 'entrepot') {
+                mEntrepot.setLatLng([clickedLat, clickedLng]);
+                posEntrepot[0] = clickedLat;
+                posEntrepot[1] = clickedLng;
             } else if (selectedRole === 'client') {
                 mClient.setLatLng([clickedLat, clickedLng]);
                 posClient[0] = clickedLat;
@@ -823,7 +830,7 @@ document.addEventListener('DOMContentLoaded', function() {
             map.panTo([clickedLat, clickedLng], {animate: true});
             
             // Notification visuelle
-            const roleLabels = { 'vehicule': 'du Véhicule / Camion', 'fournisseur': 'du Fournisseur', 'client': 'du Client' };
+            const roleLabels = { 'vehicule': 'du Véhicule / Camion', 'entrepot': 'du Dépôt / Entrepôt', 'fournisseur': 'du Fournisseur', 'client': 'du Client' };
             const statusBanner = document.getElementById('device-gps-status-banner');
             if (statusBanner) {
                 statusBanner.style.display = 'block';
@@ -845,6 +852,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     if (data.lat_fournisseur && data.lng_fournisseur) {
                         mFournisseur.setLatLng([data.lat_fournisseur, data.lng_fournisseur]);
+                    }
+                    if (data.lat_entrepot && data.lng_entrepot) {
+                        mEntrepot.setLatLng([data.lat_entrepot, data.lng_entrepot]);
                     }
                     if (data.lat_client && data.lng_client) {
                         mClient.setLatLng([data.lat_client, data.lng_client]);

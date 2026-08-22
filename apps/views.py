@@ -1022,12 +1022,14 @@ def suivi_detail_view(request, pk):
 
     etapes = suivi.etapes.all()
     historique_positions = suivi.historique_positions.all()[:50]
+    tous_entrepots = Entrepot.objects.filter(actif=True)
 
     return render(request, 'suivi_detail.html', {
         'suivi': suivi,
         'form_position': form_position,
         'etapes': etapes,
         'historique_positions': historique_positions,
+        'tous_entrepots': tous_entrepots,
         'statut_choices': dict(SuiviExpedition.STATUT_CHOICES),
     })
 
@@ -1132,6 +1134,10 @@ def suivi_update_gps_api(request, pk):
         elif role == 'entrepot':
             suivi.lat_entrepot = lat
             suivi.lng_entrepot = lng
+            if suivi.entrepot:
+                suivi.entrepot.latitude = lat
+                suivi.entrepot.longitude = lng
+                suivi.entrepot.save()
         elif role == 'client':
             suivi.lat_client = lat
             suivi.lng_client = lng
@@ -1208,8 +1214,19 @@ def suivi_ajouter_etape(request, pk):
 
 @login_required
 def suivi_get_status_api(request, pk):
-    """API JSON GET pour récupérer l'état courant et la position GPS du suivi."""
+    """API JSON GET pour récupérer l'état courant et la position GPS du suivi et de tous les dépôts."""
     suivi = get_object_or_404(SuiviExpedition, pk=pk)
+    tous_entrepots = [
+        {
+            'id': e.id,
+            'nom': e.nom,
+            'responsable': e.responsable,
+            'telephone': e.telephone,
+            'latitude': e.latitude,
+            'longitude': e.longitude,
+        }
+        for e in Entrepot.objects.filter(actif=True)
+    ]
     return JsonResponse({
         'status': 'success',
         'numero_suivi': suivi.numero_suivi,
@@ -1225,6 +1242,7 @@ def suivi_get_status_api(request, pk):
         'progression_pct': suivi.progression_pct,
         'statut': suivi.statut,
         'statut_display': suivi.get_statut_display(),
+        'entrepots': tous_entrepots,
     })
 
 
