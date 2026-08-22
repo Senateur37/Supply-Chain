@@ -1205,3 +1205,26 @@ def suivi_ajouter_etape(request, pk):
             messages.success(request, 'Nouvelle étape ajoutée au journal.')
     return redirect('suivi_detail', pk=pk)
 
+
+@login_required
+def suivi_get_status_api(request, pk):
+    """API JSON GET pour récupérer l'état courant et la position GPS du suivi."""
+    suivi = get_object_or_404(SuiviExpedition, pk=pk)
+    return JsonResponse({
+        'status': 'success',
+        'numero_suivi': suivi.numero_suivi,
+        'lat_actuelle': suivi.lat_actuelle,
+        'lng_actuelle': suivi.lng_actuelle,
+        'lat_fournisseur': suivi.lat_fournisseur,
+        'lng_fournisseur': suivi.lng_fournisseur,
+        'lat_entrepot': suivi.lat_entrepot,
+        'lng_entrepot': suivi.lng_entrepot,
+        'lat_client': suivi.lat_client,
+        'lng_client': suivi.lng_client,
+        'vitesse_kmh': suivi.vitesse_kmh,
+        'progression_pct': suivi.progression_pct,
+        'statut': suivi.statut,
+        'statut_display': suivi.get_statut_display(),
+    })
+
+

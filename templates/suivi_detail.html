@@ -663,8 +663,90 @@ document.addEventListener('DOMContentLoaded', function() {
         btnToggleDeviceGps.style.borderColor = 'var(--accent)';
         deviceGpsStatusBanner.style.display = 'none';
     }
+
+    // --- POSITIONNEMENT PAR CLIC INTERACTIF SUR LA CARTE (GARANTI 100%) ---
+    map.on('click', function(e) {
+        const clickedLat = e.latlng.lat;
+        const clickedLng = e.latlng.lng;
+        const selectedRole = userRoleSelect ? userRoleSelect.value : 'vehicule';
+
+        pauseSimulation(); // Mettre en pause toute simulation automatique
+
+        // Transmettre les coordonnées cliquées à Django
+        fetch("{% url 'suivi_update_gps_api' suivi.pk %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                lat: clickedLat,
+                lng: clickedLng,
+                vitesse: 45.0,
+                role: selectedRole
+            })
+        }).then(r => r.json()).then(data => {
+            if (selectedRole === 'fournisseur') {
+                mFournisseur.setLatLng([clickedLat, clickedLng]);
+                posFournisseur[0] = clickedLat;
+                posFournisseur[1] = clickedLng;
+            } else if (selectedRole === 'client') {
+                mClient.setLatLng([clickedLat, clickedLng]);
+                posClient[0] = clickedLat;
+                posClient[1] = clickedLng;
+            } else {
+                mCamion.setLatLng([clickedLat, clickedLng]);
+                document.getElementById('tele-vitesse').innerText = '45 km/h';
+                document.getElementById('tele-coords').innerText = `📍 Lat: ${clickedLat.toFixed(5)}, Lng: ${clickedLng.toFixed(5)}`;
+            }
+
+            // Recadrer ou centrer la carte
+            map.panTo([clickedLat, clickedLng], {animate: true});
+            
+            // Notification visuelle
+            const roleLabels = { 'vehicule': 'du Véhicule / Camion', 'fournisseur': 'du Fournisseur', 'client': 'du Client' };
+            const statusBanner = document.getElementById('device-gps-status-banner');
+            if (statusBanner) {
+                statusBanner.style.display = 'block';
+                document.getElementById('device-gps-info').innerHTML = `📍 Position ${roleLabels[selectedRole] || ''} mise à jour sur la carte : Lat <strong>${clickedLat.toFixed(5)}</strong>, Lng <strong>${clickedLng.toFixed(5)}</strong>`;
+            }
+        }).catch(err => console.error("Erreur mise à jour position par clic:", err));
+    });
+
+    // --- SYNCHRONISATION MULTI-UTILISATEURS EN DIRECT (AUTO-POLLING CHAQUE 4 SECONDES) ---
+    setInterval(function() {
+        if (isSimulating || isSharingDeviceGps) return; // Ne pas surcharger pendant le mode actif local
+
+        fetch("{% url 'suivi_get_status_api' suivi.pk %}")
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const newPos = [data.lat_actuelle, data.lng_actuelle];
+                    mCamion.setLatLng(newPos);
+                    
+                    if (data.lat_fournisseur && data.lng_fournisseur) {
+                        mFournisseur.setLatLng([data.lat_fournisseur, data.lng_fournisseur]);
+                    }
+                    if (data.lat_client && data.lng_client) {
+                        mClient.setLatLng([data.lat_client, data.lng_client]);
+                    }
+
+                    document.getElementById('tele-vitesse').innerText = (data.vitesse_kmh || 0) + ' km/h';
+                    document.getElementById('tele-progression').innerText = (data.progression_pct || 0) + '%';
+                    document.getElementById('tele-coords').innerText = `📍 Lat: ${data.lat_actuelle.toFixed(5)}, Lng: ${data.lng_actuelle.toFixed(5)}`;
+                    
+                    if (data.statut_display) {
+                        document.getElementById('tele-etape-label').innerText = data.statut_display;
+                        const headerBadge = document.getElementById('statut-badge-header');
+                        if (headerBadge) headerBadge.innerText = data.statut_display;
+                    }
+                }
+            })
+            .catch(e => {});
+    }, 4000);
 });
 </script>
 
 {% endblock %}
+
 

@@ -37,6 +37,7 @@ urlpatterns = [
     path('suivi/<int:pk>/modifier/', views.suivi_edit_view, name='suivi_edit'),
     path('suivi/<int:pk>/supprimer/', views.suivi_delete_view, name='suivi_delete'),
     path('suivi/<int:pk>/api/update-gps/', views.suivi_update_gps_api, name='suivi_update_gps_api'),
+    path('suivi/<int:pk>/api/get-status/', views.suivi_get_status_api, name='suivi_get_status_api'),
     path('suivi/<int:pk>/ajouter-etape/', views.suivi_ajouter_etape, name='suivi_ajouter_etape'),
 ]
 
