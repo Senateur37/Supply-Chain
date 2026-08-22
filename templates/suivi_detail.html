@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
-{% block title %}Suivi GPS {{ suivi.numero_suivi }} | Supply Chain{% endblock %}
+{% block title %}Suivi GPS Dynamique {{ suivi.numero_suivi }} | Supply Chain{% endblock %}
 {% block heading %}Suivi GPS Temps Réel : {{ suivi.numero_suivi }}{% endblock %}
 
 {% block content %}
@@ -22,15 +22,31 @@
     </div>
 </div>
 
+<!-- Banner Alerte Succès Livraison en main propre (Caché par défaut) -->
+<div id="delivery-success-banner" style="display: {% if suivi.statut == '5_LIVRE' %}flex{% else %}none{% endif %}; background: linear-gradient(135deg, #2ecc71, #27ae60); color: #fff; padding: 1.2rem 1.5rem; border-radius: 12px; margin-bottom: 1.5rem; align-items: center; justify-content: space-between; box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);">
+    <div style="display: flex; align-items: center; gap: 1rem;">
+        <span style="font-size: 2.2rem;">🤝</span>
+        <div>
+            <h3 style="margin: 0; font-size: 1.25rem;">Produit remis en main propre au client !</h3>
+            <p style="margin: 0.2rem 0 0 0; font-size: 0.9rem; opacity: 0.95;">
+                Livraison effectuée avec succès pour le client <strong>{{ suivi.client.nom|default:"Client Final" }}</strong>. Bon de livraison signé.
+            </p>
+        </div>
+    </div>
+    <span class="badge" style="background: rgba(255,255,255,0.25); color: #fff; font-size: 0.9rem; padding: 0.5rem 1rem;">
+        ✅ LIVRAISON CONFIRMÉE
+    </span>
+</div>
+
 <!-- En-tête de l'expédition & Timeline 5 étapes -->
-<div class="panel" style="margin-bottom: 1.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+<div class="panel" style="margin-bottom: 1.5rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 1.5rem;">
     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
         <div>
             <h2 style="margin: 0; color: var(--primary); font-size: 1.5rem;">
                 📦 {{ suivi.produit.designation }} <span style="font-size: 1.1rem; color: #666;">(x{{ suivi.quantite }})</span>
             </h2>
             <div style="margin-top: 0.3rem; color: #555; font-size: 0.95rem;">
-                Expédition N° <strong>{{ suivi.numero_suivi }}</strong> | Transporteur: <strong>{{ suivi.transporteur }}</strong> ({{ suivi.immatriculation_vehicule }})
+                Code de suivi : <strong style="color: var(--primary);">{{ suivi.numero_suivi }}</strong> | Transporteur : <strong>{{ suivi.transporteur }}</strong> ({{ suivi.immatriculation_vehicule }})
             </div>
         </div>
         <div>
@@ -39,127 +55,125 @@
                 {% elif suivi.statut == '2_TRANSIT_ENTREPOT' %}badge-info
                 {% elif suivi.statut == '3_ENTREPOT' %}badge-purple
                 {% elif suivi.statut == '4_TRANSIT_CLIENT' %}badge-orange
-                {% elif suivi.statut == '5_LIVRE' %}badge-success{% endif %}" style="font-size: 1rem; padding: 0.5rem 1rem;">
+                {% elif suivi.statut == '5_LIVRE' %}badge-success{% endif %}" style="font-size: 1rem; padding: 0.5rem 1.2rem;">
                 {{ suivi.get_statut_display }}
             </span>
         </div>
     </div>
 
-    <!-- Stepper Visuel 5 Étapes -->
+    <!-- Stepper Visuel 5 Étapes du Fournisseur jusqu'à la main du Client -->
     <div class="tracking-stepper" style="display: flex; justify-content: space-between; position: relative; margin: 2rem 0 1rem 0;">
         <div style="position: absolute; top: 22px; left: 5%; right: 5%; height: 4px; background: #e0e0e0; z-index: 1;"></div>
-        <div id="stepper-progress-line" style="position: absolute; top: 22px; left: 5%; width: {% if suivi.statut == '1_FOURNISSEUR' %}0%{% elif suivi.statut == '2_TRANSIT_ENTREPOT' %}25%{% elif suivi.statut == '3_ENTREPOT' %}50%{% elif suivi.statut == '4_TRANSIT_CLIENT' %}75%{% elif suivi.statut == '5_LIVRE' %}90%{% endif %}; height: 4px; background: var(--accent); z-index: 1; transition: width 0.5s ease;"></div>
+        <div id="stepper-progress-line" style="position: absolute; top: 22px; left: 5%; width: {% if suivi.statut == '1_FOURNISSEUR' %}0%{% elif suivi.statut == '2_TRANSIT_ENTREPOT' %}25%{% elif suivi.statut == '3_ENTREPOT' %}50%{% elif suivi.statut == '4_TRANSIT_CLIENT' %}75%{% elif suivi.statut == '5_LIVRE' %}90%{% endif %}; height: 4px; background: var(--accent); z-index: 1; transition: width 0.3s ease;"></div>
 
         <!-- Étape 1 -->
-        <div class="step-item {% if suivi.statut >= '1_FOURNISSEUR' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
-            <div class="step-circle" style="width: 44px; height: 44px; border-radius: 50%; background: {% if suivi.statut >= '1_FOURNISSEUR' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+        <div id="step-node-1" class="step-item {% if suivi.statut >= '1_FOURNISSEUR' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
+            <div class="step-circle" style="width: 46px; height: 46px; border-radius: 50%; background: {% if suivi.statut >= '1_FOURNISSEUR' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: background 0.3s;">
                 🏭
             </div>
-            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">Fournisseur</div>
-            <small style="color: #666; font-size: 0.75rem;">{{ suivi.fournisseur.nom|default:"Départ" }}</small>
+            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">1. Fournisseur</div>
+            <small style="color: #666; font-size: 0.75rem;">{{ suivi.fournisseur.nom|default:"Chargement usine" }}</small>
         </div>
 
         <!-- Étape 2 -->
-        <div class="step-item {% if suivi.statut >= '2_TRANSIT_ENTREPOT' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
-            <div class="step-circle" style="width: 44px; height: 44px; border-radius: 50%; background: {% if suivi.statut >= '2_TRANSIT_ENTREPOT' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+        <div id="step-node-2" class="step-item {% if suivi.statut >= '2_TRANSIT_ENTREPOT' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
+            <div class="step-circle" style="width: 46px; height: 46px; border-radius: 50%; background: {% if suivi.statut >= '2_TRANSIT_ENTREPOT' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: background 0.3s;">
                 🚚
             </div>
-            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">Transit Entrepôt</div>
-            <small style="color: #666; font-size: 0.75rem;">Sur la route</small>
+            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">2. Transit Entrepôt</div>
+            <small style="color: #666; font-size: 0.75rem;">Route principale</small>
         </div>
 
         <!-- Étape 3 -->
-        <div class="step-item {% if suivi.statut >= '3_ENTREPOT' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
-            <div class="step-circle" style="width: 44px; height: 44px; border-radius: 50%; background: {% if suivi.statut >= '3_ENTREPOT' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+        <div id="step-node-3" class="step-item {% if suivi.statut >= '3_ENTREPOT' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
+            <div class="step-circle" style="width: 46px; height: 46px; border-radius: 50%; background: {% if suivi.statut >= '3_ENTREPOT' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: background 0.3s;">
                 🏬
             </div>
-            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">Entrepôt</div>
+            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">3. Entrepôt Hub</div>
             <small style="color: #666; font-size: 0.75rem;">{{ suivi.entrepot.nom|default:"Stock central" }}</small>
         </div>
 
         <!-- Étape 4 -->
-        <div class="step-item {% if suivi.statut >= '4_TRANSIT_CLIENT' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
-            <div class="step-circle" style="width: 44px; height: 44px; border-radius: 50%; background: {% if suivi.statut >= '4_TRANSIT_CLIENT' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
+        <div id="step-node-4" class="step-item {% if suivi.statut >= '4_TRANSIT_CLIENT' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
+            <div class="step-circle" style="width: 46px; height: 46px; border-radius: 50%; background: {% if suivi.statut >= '4_TRANSIT_CLIENT' %}var(--accent){% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: background 0.3s;">
                 🚛
             </div>
-            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">Transit Client</div>
-            <small style="color: #666; font-size: 0.75rem;">En livraison</small>
+            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">4. En Livraison Client</div>
+            <small style="color: #666; font-size: 0.75rem;">Dernier kilomètre</small>
         </div>
 
         <!-- Étape 5 -->
-        <div class="step-item {% if suivi.statut == '5_LIVRE' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
-            <div class="step-circle" style="width: 44px; height: 44px; border-radius: 50%; background: {% if suivi.statut == '5_LIVRE' %}#2ecc71{% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.15);">
-                🏡
+        <div id="step-node-5" class="step-item {% if suivi.statut == '5_LIVRE' %}active{% endif %}" style="z-index: 2; text-align: center; width: 20%;">
+            <div class="step-circle" style="width: 46px; height: 46px; border-radius: 50%; background: {% if suivi.statut == '5_LIVRE' %}#2ecc71{% else %}#ccc{% endif %}; color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto; font-size: 1.3rem; font-weight: bold; border: 3px solid #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: background 0.3s;">
+                🤝
             </div>
-            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">Client</div>
-            <small style="color: #666; font-size: 0.75rem;">{{ suivi.client.nom|default:"Destination" }}</small>
+            <div style="font-weight: 600; font-size: 0.85rem; margin-top: 0.5rem;">5. Main du Client</div>
+            <small style="color: #666; font-size: 0.75rem;">{{ suivi.client.nom|default:"Remise en main propre" }}</small>
         </div>
     </div>
 </div>
 
-<!-- Grille Principale : Carte GPS + Tableau de Télémétrie -->
+<!-- Grille Carte GPS + Télémétrie -->
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
 
-    <!-- Panneau Carte GPS & Simulateur -->
+    <!-- Carte GPS & Contrôles Dynamiques -->
     <div class="panel" style="padding: 1.2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
-            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
-                <span>🗺️</span> Carte GPS & Suivi en Direct
+            <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--primary);">
+                <span>📍</span> Carte GPS & Déplacement du Produit en Direct
             </h3>
-            <span style="font-size: 0.85rem; background: #eef9f9; color: var(--accent); padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 600;">
-                🟢 Signal GPS Connecté
+            <span id="live-gps-indicator" style="font-size: 0.85rem; background: #eef9f9; color: var(--accent); padding: 0.3rem 0.8rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 0.4rem;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #2ecc71; display: inline-block;"></span> Signal GPS Actif
             </span>
         </div>
 
-        <!-- Conteneur Carte Leaflet -->
-        <div id="gps-map" style="height: 440px; width: 100%; border-radius: 10px; z-index: 5; border: 1px solid #ddd;"></div>
+        <!-- Conteneur Carte Leaflet (Taille explicite inline) -->
+        <div id="gps-map" style="height: 500px; min-height: 500px; width: 100%; border-radius: 12px; z-index: 1; border: 1px solid #ddd;"></div>
 
-        <!-- Contrôles du Simulateur GPS -->
+        <!-- Barre de Contrôles Dynamiques du Simulateur -->
         <div style="margin-top: 1rem; background: #f8f9fa; padding: 1rem; border-radius: 10px; border: 1px solid #eee;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                     <button id="btn-play-sim" class="btn btn-primary" style="display: flex; align-items: center; gap: 0.4rem;">
                         <span id="play-icon">▶️</span> <span id="play-text">Démarrer Suivi Live</span>
                     </button>
-                    <button id="btn-reset-sim" class="btn btn-light" title="Réinitialiser le trajet">
+                    <button id="btn-deliver-client" class="btn btn-success" style="display: flex; align-items: center; gap: 0.4rem;" title="Remettre le colis en main propre au client">
+                        🤝 Remettre au Client
+                    </button>
+                    <button id="btn-reset-sim" class="btn btn-light" title="Réinitialiser au fournisseur">
                         🔄 Réinitialiser
                     </button>
                 </div>
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <label style="font-size: 0.85rem; font-weight: bold; margin: 0;">Vitesse Simulation :</label>
+                    <label style="font-size: 0.85rem; font-weight: bold; margin: 0;">Vitesse :</label>
                     <select id="sim-speed-select" class="form-control" style="width: auto; padding: 0.3rem 0.6rem;">
-                        <option value="1">1x (Normal)</option>
+                        <option value="1">1x (Temps Réel)</option>
                         <option value="2" selected>2x (Rapide)</option>
-                        <option value="5">5x (Très rapide)</option>
+                        <option value="5">5x (Très Rapide)</option>
                         <option value="10">10x (Ultra)</option>
                     </select>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <button id="btn-next-stage" class="btn btn-sm btn-secondary">
-                        ⏩ Sauter à l'Étape Suivante
-                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Panneau Télémétrie en Direct & Informations -->
+    <!-- Panneau Télémétrie Live -->
     <div style="display: flex; flex-direction: column; gap: 1rem;">
 
-        <!-- Télémétrie GPS Live -->
+        <!-- Télémétrie GPS -->
         <div class="panel" style="padding: 1.2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <h4 style="margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 0.5rem;">
                 ⚡ Télémétrie en Direct
             </h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin-top: 1rem;">
                 <div style="background: #f4f6f9; padding: 0.8rem; border-radius: 8px; text-align: center;">
-                    <small style="color: #666; font-size: 0.75rem; text-transform: uppercase;">Vitesse Instantanée</small>
+                    <small style="color: #666; font-size: 0.75rem; text-transform: uppercase;">Vitesse instantanée</small>
                     <div id="tele-vitesse" style="font-size: 1.4rem; font-weight: bold; color: var(--accent); margin-top: 0.2rem;">
                         {{ suivi.vitesse_kmh }} km/h
                     </div>
                 </div>
                 <div style="background: #f4f6f9; padding: 0.8rem; border-radius: 8px; text-align: center;">
-                    <small style="color: #666; font-size: 0.75rem; text-transform: uppercase;">Progression Trajet</small>
+                    <small style="color: #666; font-size: 0.75rem; text-transform: uppercase;">Progression globale</small>
                     <div id="tele-progression" style="font-size: 1.4rem; font-weight: bold; color: var(--primary); margin-top: 0.2rem;">
                         {{ suivi.progression_pct }}%
                     </div>
@@ -172,26 +186,33 @@
                     📍 Lat: {{ suivi.lat_actuelle|floatformat:5 }}, Lng: {{ suivi.lng_actuelle|floatformat:5 }}
                 </div>
             </div>
+
+            <div style="margin-top: 1rem; background: #f4f6f9; padding: 0.8rem; border-radius: 8px;">
+                <small style="color: #666; font-size: 0.75rem; text-transform: uppercase;">Étape en cours</small>
+                <div id="tele-etape-label" style="font-weight: bold; margin-top: 0.2rem; color: var(--primary);">
+                    {{ suivi.get_statut_display }}
+                </div>
+            </div>
         </div>
 
-        <!-- Infos Chauffeur & Pôles -->
+        <!-- Détails du Transporteur & Destination -->
         <div class="panel" style="padding: 1.2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <h4 style="margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 0.5rem;">
-                🚚 Transporteur & Destinations
+                🚛 Intervenants & Destinations
             </h4>
             <ul style="list-style: none; padding: 0; margin: 0.8rem 0 0 0; font-size: 0.9rem; line-height: 1.8;">
                 <li><strong>Chauffeur :</strong> {{ suivi.nom_chauffeur }} ({{ suivi.telephone_chauffeur }})</li>
                 <li><strong>Véhicule :</strong> {{ suivi.immatriculation_vehicule }} ({{ suivi.transporteur }})</li>
                 <li style="margin-top: 0.5rem;"><strong>🏭 Fournisseur :</strong> {{ suivi.fournisseur.nom|default:"Non spécifié" }}</li>
                 <li><strong>🏬 Entrepôt :</strong> {{ suivi.entrepot.nom|default:"Non spécifié" }}</li>
-                <li><strong>🏡 Client Final :</strong> {{ suivi.client.nom|default:"Non spécifié" }}</li>
+                <li><strong>🤝 Client Final :</strong> {{ suivi.client.nom|default:"Non spécifié" }}</li>
             </ul>
         </div>
 
-        <!-- Formulaire de mise à jour rapide GPS manuelle -->
+        <!-- Formulaire de mise à jour manuelle -->
         <div class="panel" style="padding: 1.2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <h4 style="margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 0.5rem;">
-                ⚙️ Mise à Jour Manuelle GPS
+                ⚙️ Mise à Jour Manuelle Position
             </h4>
             <form method="post" style="margin-top: 0.8rem;">
                 {% csrf_token %}
@@ -229,13 +250,13 @@
 <!-- Journal des Étapes & Historique de Parcours -->
 <div class="panel" style="padding: 1.5rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-        <h3 style="margin: 0; color: var(--primary);">📜 Journal Historique des Étapes</h3>
+        <h3 style="margin: 0; color: var(--primary);">📜 Journal des Jalons & Historique du Produit</h3>
     </div>
 
     <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem;">
-        <!-- Liste des jalons enregistrés -->
+        <!-- Liste des jalons -->
         <div>
-            <div class="timeline-list" style="position: relative; padding-left: 1.5rem; border-left: 3px solid var(--primary-light);">
+            <div id="journal-etapes-list" class="timeline-list" style="position: relative; padding-left: 1.5rem; border-left: 3px solid var(--primary-light);">
                 {% for etape in etapes %}
                 <div style="margin-bottom: 1.5rem; position: relative;">
                     <div style="position: absolute; left: -1.95rem; top: 0; width: 14px; height: 14px; border-radius: 50%; background: var(--accent); border: 2px solid #fff;"></div>
@@ -253,19 +274,19 @@
             </div>
         </div>
 
-        <!-- Formulaire d'ajout d'une étape manuelle -->
+        <!-- Formulaire d'ajout manuel -->
         <div style="background: #f9fafc; padding: 1rem; border-radius: 8px; border: 1px solid #eee;">
-            <h4 style="margin-top: 0; font-size: 0.95rem; color: var(--primary);">➕ Ajouter une remarque / étape</h4>
+            <h4 style="margin-top: 0; font-size: 0.95rem; color: var(--primary);">➕ Ajouter une étape / note</h4>
             <form method="post" action="{% url 'suivi_ajouter_etape' suivi.pk %}">
                 {% csrf_token %}
                 <div style="margin-bottom: 0.6rem;">
-                    <input type="text" name="titre" class="form-control" placeholder="Titre (ex: Passage Douanes)" required>
+                    <input type="text" name="titre" class="form-control" placeholder="Titre (ex: Remise en main propre)" required>
                 </div>
                 <div style="margin-bottom: 0.6rem;">
-                    <input type="text" name="lieu" class="form-control" placeholder="Lieu (ex: Poste Frontière)">
+                    <input type="text" name="lieu" class="form-control" placeholder="Lieu (ex: Domicile Client)">
                 </div>
                 <div style="margin-bottom: 0.8rem;">
-                    <textarea name="description" class="form-control" rows="2" placeholder="Description de l'événement..."></textarea>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Description..."></textarea>
                 </div>
                 <button type="submit" class="btn btn-sm btn-secondary" style="width: 100%;">Ajouter Étape</button>
             </form>
@@ -273,7 +294,7 @@
     </div>
 </div>
 
-<!-- SCRIPT JAVASCRIPT LEAFLET.JS ET SIMULATEUR GPS EN TEMPS RÉEL -->
+<!-- LEAFLET.JS CARTE ET MOTEUR DE SIMULATION DYNAMIQUE -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Coordonnées des 3 pôles principaux
@@ -282,66 +303,80 @@ document.addEventListener('DOMContentLoaded', function() {
     const posClient = [{{ suivi.lat_client }}, {{ suivi.lng_client }}];
     let posActuelle = [{{ suivi.lat_actuelle }}, {{ suivi.lng_actuelle }}];
 
-    // Initialisation de la carte Leaflet
-    const map = L.map('gps-map').setView(posActuelle, 12);
+    const mapContainer = document.getElementById('gps-map');
+    if (!mapContainer) return;
 
-    // Fond de carte OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // Initialisation sécurisée de la carte Leaflet
+    const map = L.map('gps-map', {
+        center: posActuelle,
+        zoom: 12,
+        zoomControl: true
+    });
+
+    // Tuiles OpenStreetMap fiables avec fallback
+    const tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    L.tileLayer(tileUrl, {
         maxZoom: 19,
         attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    // Icônes personnalisées
-    const createIcon = (emoji, bgColor) => L.divIcon({
-        className: 'custom-map-icon',
-        html: `<div style="background:${bgColor}; color:white; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; border:2px solid white; box-shadow:0 3px 8px rgba(0,0,0,0.3);">${emoji}</div>`,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18]
+    // Invalider la taille de la carte pour forcer le rendu immédiat des tuiles
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 250);
+
+    // Icônes personnalisées Leaflet
+    const createIcon = (emoji, bgColor, isPulse = false) => L.divIcon({
+        className: 'custom-map-icon ' + (isPulse ? 'gps-pulse-marker' : ''),
+        html: `<div style="background:${bgColor}; color:white; width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; border:2px solid white; box-shadow:0 3px 10px rgba(0,0,0,0.3);">${emoji}</div>`,
+        iconSize: [38, 38],
+        iconAnchor: [19, 19]
     });
 
     const iconFournisseur = createIcon('🏭', '#f39c12');
     const iconEntrepot = createIcon('🏬', '#9b59b6');
     const iconClient = createIcon('🏡', '#2ecc71');
-    const iconCamion = createIcon('🚚', '#0EA5A4');
+    const iconCamion = createIcon('🚚', '#0EA5A4', true);
+    const iconRemiseClient = createIcon('🤝', '#27ae60', true);
 
     // Marqueurs fixes
     const mFournisseur = L.marker(posFournisseur, {icon: iconFournisseur}).addTo(map)
-        .bindPopup('<b>Fournisseur :</b> {{ suivi.fournisseur.nom|default:"Départ" }}');
+        .bindPopup('<b>1. Fournisseur :</b> {{ suivi.fournisseur.nom|default:"Départ" }}');
     
     const mEntrepot = L.marker(posEntrepot, {icon: iconEntrepot}).addTo(map)
-        .bindPopup('<b>Entrepôt :</b> {{ suivi.entrepot.nom|default:"Stock" }}');
+        .bindPopup('<b>3. Entrepôt Hub :</b> {{ suivi.entrepot.nom|default:"Stock central" }}');
     
     const mClient = L.marker(posClient, {icon: iconClient}).addTo(map)
-        .bindPopup('<b>Client :</b> {{ suivi.client.nom|default:"Destination" }}');
+        .bindPopup('<b>5. Client Final :</b> {{ suivi.client.nom|default:"Destination" }}');
 
     // Marqueur Véhicule mobile
     const mCamion = L.marker(posActuelle, {icon: iconCamion}).addTo(map)
-        .bindPopup('<b>Véhicule de Livraison</b><br>Camion: {{ suivi.immatriculation_vehicule }}<br>Chauffeur: {{ suivi.nom_chauffeur }}');
+        .bindPopup('<b>Véhicule de Livraison GPS</b><br>Camion: {{ suivi.immatriculation_vehicule }}<br>Chauffeur: {{ suivi.nom_chauffeur }}');
 
-    // Lignes de trajectoire
-    const lineSegment1 = L.polyline([posFournisseur, posEntrepot], {color: '#3498db', weight: 4, dashArray: '6, 8'}).addTo(map);
-    const lineSegment2 = L.polyline([posEntrepot, posClient], {color: '#e67e22', weight: 4, dashArray: '6, 8'}).addTo(map);
+    // Lignes de polyline
+    const lineSegment1 = L.polyline([posFournisseur, posEntrepot], {color: '#3498db', weight: 5, dashArray: '6, 8'}).addTo(map);
+    const lineSegment2 = L.polyline([posEntrepot, posClient], {color: '#e67e22', weight: 5, dashArray: '6, 8'}).addTo(map);
+    const activeRouteLine = L.polyline([posFournisseur, posActuelle], {color: '#0EA5A4', weight: 6}).addTo(map);
 
-    // Ajuster les bornes de la carte pour tout afficher
-    const group = L.featureGroup([mFournisseur, mEntrepot, mClient, mCamion]);
-    map.fitBounds(group.getBounds().pad(0.2));
+    // Recadrer la carte pour afficher tous les marqueurs
+    const boundsGroup = L.featureGroup([mFournisseur, mEntrepot, mClient, mCamion]);
+    map.fitBounds(boundsGroup.getBounds().pad(0.2));
 
-    // --- MOTEUR DE SIMULATION GPS TEMPS RÉEL ---
+    // --- MOTEUR DE SIMULATION GPS DYNAMIQUE TEMPS RÉEL ---
     let isSimulating = false;
     let simInterval = null;
     let currentPct = {{ suivi.progression_pct }};
     let simSpeedMultiplier = 2;
 
     const btnPlay = document.getElementById('btn-play-sim');
+    const btnDeliverClient = document.getElementById('btn-deliver-client');
     const btnReset = document.getElementById('btn-reset-sim');
-    const btnNextStage = document.getElementById('btn-next-stage');
     const speedSelect = document.getElementById('sim-speed-select');
 
     speedSelect.addEventListener('change', function() {
         simSpeedMultiplier = parseFloat(this.value);
     });
 
-    // Interpolation linéaire entre deux coordonnées GPS (lat, lng)
     function interpolate(p1, p2, ratio) {
         return [
             p1[0] + (p2[0] - p1[0]) * ratio,
@@ -349,46 +384,85 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
     }
 
-    // Calcul de la position GPS en fonction du % de progression globale (0 -> 50% = Seg 1, 50 -> 100% = Seg 2)
     function getPointAtPct(pct) {
         if (pct <= 50) {
             const ratio = pct / 50;
             return {
                 coords: interpolate(posFournisseur, posEntrepot, ratio),
-                statut: pct === 0 ? '1_FOURNISSEUR' : (pct === 50 ? '3_ENTREPOT' : '2_TRANSIT_ENTREPOT')
+                statut: pct === 0 ? '1_FOURNISSEUR' : (pct === 50 ? '3_ENTREPOT' : '2_TRANSIT_ENTREPOT'),
+                statutLabel: pct === 0 ? '1. Fournisseur — Chargement' : (pct === 50 ? '3. Reçu à l\'Entrepôt' : '2. Transit vers l\'Entrepôt')
             };
         } else {
             const ratio = (pct - 50) / 50;
             return {
                 coords: interpolate(posEntrepot, posClient, ratio),
-                statut: pct === 100 ? '5_LIVRE' : '4_TRANSIT_CLIENT'
+                statut: pct >= 100 ? '5_LIVRE' : '4_TRANSIT_CLIENT',
+                statutLabel: pct >= 100 ? '5. Livré en main propre au Client' : '4. En livraison au Domicile Client'
             };
         }
     }
 
-    // Mise à jour de la carte & envoi AJAX vers Django
+    function updateStepNodes(pct) {
+        const setNodeActive = (id, active, color = 'var(--accent)') => {
+            const node = document.getElementById(id);
+            if (node) {
+                const circle = node.querySelector('.step-circle');
+                if (circle) circle.style.background = active ? color : '#ccc';
+            }
+        };
+
+        setNodeActive('step-node-1', pct >= 0);
+        setNodeActive('step-node-2', pct >= 25);
+        setNodeActive('step-node-3', pct >= 50);
+        setNodeActive('step-node-4', pct >= 75);
+        setNodeActive('step-node-5', pct >= 100, '#2ecc71');
+    }
+
     function updateGPSPosition(pct, forceSync = false) {
         currentPct = Math.min(100, Math.max(0, pct));
         const res = getPointAtPct(currentPct);
         const newCoords = res.coords;
         const newStatut = res.statut;
-        const vitesse = (currentPct > 0 && currentPct < 100) ? (45 + Math.floor(Math.random() * 20)) : 0;
+        const vitesse = (currentPct > 0 && currentPct < 100) ? (50 + Math.floor(Math.random() * 15)) : 0;
 
-        // Mise à jour marqueur et carte
+        // Déplacer le marqueur véhicule
         mCamion.setLatLng(newCoords);
 
-        // Mettre à jour télémétrie UI
+        // Mettre à jour l'icône du camion à l'arrivée chez le client
+        if (currentPct >= 100) {
+            mCamion.setIcon(iconRemiseClient);
+            document.getElementById('delivery-success-banner').style.display = 'flex';
+        } else {
+            mCamion.setIcon(iconCamion);
+            document.getElementById('delivery-success-banner').style.display = 'none';
+        }
+
+        // Mettre à jour la ligne active de trajet
+        if (currentPct <= 50) {
+            activeRouteLine.setLatLngs([posFournisseur, newCoords]);
+        } else {
+            activeRouteLine.setLatLngs([posFournisseur, posEntrepot, newCoords]);
+        }
+
+        // Mettre à jour l'affichage télémétrie UI
         document.getElementById('tele-vitesse').innerText = vitesse + ' km/h';
         document.getElementById('tele-progression').innerText = Math.round(currentPct) + '%';
         document.getElementById('tele-coords').innerText = `📍 Lat: ${newCoords[0].toFixed(5)}, Lng: ${newCoords[1].toFixed(5)}`;
+        document.getElementById('tele-etape-label').innerText = res.statutLabel;
 
-        // Mettre à jour la barre d'étape
+        // Stepper
         const stepperLine = document.getElementById('stepper-progress-line');
         if (stepperLine) {
             stepperLine.style.width = Math.round(currentPct * 0.9) + '%';
         }
+        updateStepNodes(currentPct);
 
-        // Synchroniser avec Django backend via API JSON
+        // Centrer doucement la carte sur le véhicule lors de la simulation
+        if (isSimulating) {
+            map.panTo(newCoords, {animate: true, duration: 0.2});
+        }
+
+        // Synchroniser AJAX avec Django
         if (forceSync || Math.round(currentPct) % 5 === 0 || currentPct === 100) {
             fetch("{% url 'suivi_update_gps_api' suivi.pk %}", {
                 method: 'POST',
@@ -412,15 +486,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Toggle Simulation
-    btnPlay.addEventListener('click', function() {
-        if (isSimulating) {
-            pauseSimulation();
-        } else {
-            startSimulation();
-        }
-    });
-
     function startSimulation() {
         if (currentPct >= 100) currentPct = 0;
         isSimulating = true;
@@ -428,15 +493,14 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('play-text').innerText = 'Pause Suivi';
 
         simInterval = setInterval(function() {
-            currentPct += 0.5 * simSpeedMultiplier;
+            currentPct += 0.4 * simSpeedMultiplier;
             updateGPSPosition(currentPct);
 
             if (currentPct >= 100) {
                 pauseSimulation();
                 updateGPSPosition(100, true);
-                alert("🎉 Expédition Livrée au Client avec Succès !");
             }
-        }, 300);
+        }, 200);
     }
 
     function pauseSimulation() {
@@ -446,18 +510,29 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('play-text').innerText = 'Reprendre Suivi Live';
     }
 
+    btnPlay.addEventListener('click', function() {
+        if (isSimulating) {
+            pauseSimulation();
+        } else {
+            startSimulation();
+        }
+    });
+
+    btnDeliverClient.addEventListener('click', function() {
+        pauseSimulation();
+        updateGPSPosition(100, true);
+        alert("🎉 Produit remis en main propre au client avec succès ! Le bon de livraison est confirmé.");
+    });
+
     btnReset.addEventListener('click', function() {
         pauseSimulation();
         updateGPSPosition(0, true);
     });
 
-    btnNextStage.addEventListener('click', function() {
-        if (currentPct < 50) {
-            updateGPSPosition(50, true);
-        } else {
-            updateGPSPosition(100, true);
-        }
-    });
+    // Lancement automatique du suivi au chargement si l'expédition n'est pas terminée
+    if (currentPct < 100 && currentPct > 0) {
+        setTimeout(startSimulation, 800);
+    }
 });
 </script>
 
