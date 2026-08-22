@@ -685,4 +685,167 @@ td.actions .inline-form { margin-right: 4px; }
     100% { transform: scale(1.6); opacity: 0; }
 }
 
+/* ===== ZONE DE RECHERCHE ET FILTRES ULTRA-DESIGN ===== */
+.filter-bar,
+.search-filter-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f4f8fb 100%);
+    border: 1px solid rgba(14, 165, 164, 0.25);
+    border-top: 3px solid var(--accent);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 8px 25px rgba(20, 52, 91, 0.06);
+    margin-bottom: 1.5rem;
+    transition: all 0.25s ease-in-out;
+}
+.filter-bar:hover,
+.search-filter-card:hover {
+    box-shadow: 0 12px 30px rgba(20, 52, 91, 0.1);
+    border-color: var(--accent);
+}
+
+.filter-bar input[type="text"], 
+.filter-bar input[type="search"], 
+.filter-bar select {
+    height: 42px;
+    border-radius: 10px;
+    border: 1px solid #d1dbe5;
+    background: #ffffff;
+    font-size: 0.88rem;
+    padding: 0 0.8rem;
+    transition: all 0.2s ease;
+}
+.filter-bar input:focus, 
+.filter-bar select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3.5px rgba(14, 165, 164, 0.18);
+    outline: none;
+}
+
+.search-input-group {
+    position: relative;
+    flex: 1;
+    min-width: 260px;
+}
+.search-input-group .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1rem;
+    color: var(--accent);
+    pointer-events: none;
+    transition: color 0.2s;
+}
+.search-input-group input.form-control-search {
+    padding-left: 42px !important;
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #d1dbe5;
+    background: #ffffff;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+.search-input-group input.form-control-search:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3.5px rgba(14, 165, 164, 0.18);
+    background: #ffffff;
+    outline: none;
+}
+
+.filter-select-group {
+    min-width: 200px;
+}
+.filter-select-group select.form-control-select {
+    height: 44px;
+    border-radius: 10px;
+    border: 1px solid #d1dbe5;
+    background: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    padding: 0 0.8rem;
+}
+.filter-select-group select.form-control-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3.5px rgba(14, 165, 164, 0.18);
+    outline: none;
+}
+
+.btn-search-gradient {
+    background: linear-gradient(135deg, var(--accent) 0%, #087f7e 100%);
+    color: #ffffff !important;
+    border: none;
+    height: 44px;
+    padding: 0 1.4rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 14px rgba(14, 165, 164, 0.35);
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.btn-search-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(14, 165, 164, 0.45);
+    background: linear-gradient(135deg, #10b6b5 0%, #066968 100%);
+}
+
+.btn-reset-pill {
+    height: 44px;
+    padding: 0 1.2rem;
+    border-radius: 10px;
+    border: 1px solid #d1dbe5;
+    background: #ffffff;
+    color: #555;
+    font-weight: 500;
+    font-size: 0.88rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.btn-reset-pill:hover {
+    background: #f0f4f8;
+    color: #333;
+    border-color: #bccbd9;
+}
+
+/* Quick Filter Chips */
+.quick-filter-chips {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.8rem;
+    flex-wrap: wrap;
+}
+.filter-chip {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    background: #ffffff;
+    border: 1px solid #d1dbe5;
+    color: #555;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.filter-chip:hover, .filter-chip.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 3px 8px rgba(20, 52, 91, 0.2);
+}
+
 

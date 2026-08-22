@@ -49,24 +49,61 @@
         </a>
     </div>
 
-    <!-- Formulaire de recherche et filtre -->
-    <form method="get" class="filter-form" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; background: rgba(0,0,0,0.02); padding: 1rem; border-radius: 8px;">
-        <div style="flex: 1; min-width: 200px;">
-            <input type="text" name="q" value="{{ query }}" class="form-control" placeholder="Rechercher N° suivi, produit, client, transporteur...">
+    <!-- Formulaire de Recherche et Filtres Ultra-Design -->
+    <div class="search-filter-card">
+        <form method="get" class="filter-form" style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+            <!-- Zone de Recherche principale -->
+            <div class="search-input-group">
+                <span class="search-icon">🔍</span>
+                <input type="text" name="q" value="{{ query }}" class="form-control form-control-search" placeholder="Rechercher par N° suivi, produit, client, transporteur, chauffeur...">
+            </div>
+
+            <!-- Filtre par Statut -->
+            <div class="filter-select-group">
+                <select name="statut" class="form-control form-control-select">
+                    <option value="">🎯 Tous les statuts</option>
+                    {% for val, label in statut_choices %}
+                    <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Boutons d'Action -->
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button type="submit" class="btn-search-gradient">
+                    <span>⚡</span> Filtrer
+                </button>
+                {% if query or statut_filtre %}
+                <a href="{% url 'suivi_list' %}" class="btn-reset-pill">
+                    🔄 Réinitialiser
+                </a>
+                {% endif %}
+            </div>
+        </form>
+
+        <!-- Chips de filtres rapides -->
+        <div class="quick-filter-chips">
+            <span style="font-size: 0.78rem; color: var(--muted); font-weight: 600;">Filtres rapides :</span>
+            <a href="{% url 'suivi_list' %}" class="filter-chip {% if not statut_filtre and not query %}active{% endif %}">
+                📍 Tous ({{ stats.total }})
+            </a>
+            <a href="{% url 'suivi_list' %}?statut=1_FOURNISSEUR" class="filter-chip {% if statut_filtre == '1_FOURNISSEUR' %}active{% endif %}">
+                🏭 Chez Fournisseur ({{ stats.fournisseur }})
+            </a>
+            <a href="{% url 'suivi_list' %}?statut=2_TRANSIT_ENTREPOT" class="filter-chip {% if statut_filtre == '2_TRANSIT_ENTREPOT' %}active{% endif %}">
+                🚚 Transit Entrepôt ({{ stats.transit_entrepot }})
+            </a>
+            <a href="{% url 'suivi_list' %}?statut=3_ENTREPOT" class="filter-chip {% if statut_filtre == '3_ENTREPOT' %}active{% endif %}">
+                🏬 Stock Entrepôt ({{ stats.entrepot }})
+            </a>
+            <a href="{% url 'suivi_list' %}?statut=4_TRANSIT_CLIENT" class="filter-chip {% if statut_filtre == '4_TRANSIT_CLIENT' %}active{% endif %}">
+                🚚 Transit Client ({{ stats.transit_client }})
+            </a>
+            <a href="{% url 'suivi_list' %}?statut=5_LIVRE" class="filter-chip {% if statut_filtre == '5_LIVRE' %}active{% endif %}">
+                🤝 Livrés ({{ stats.livre }})
+            </a>
         </div>
-        <div style="width: 220px;">
-            <select name="statut" class="form-control">
-                <option value="">Tous les statuts</option>
-                {% for val, label in statut_choices %}
-                <option value="{{ val }}" {% if statut_filtre == val %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button type="submit" class="btn btn-secondary">Filtrer</button>
-        {% if query or statut_filtre %}
-        <a href="{% url 'suivi_list' %}" class="btn btn-light">Réinitialiser</a>
-        {% endif %}
-    </form>
+    </div>
 
     <!-- Tableau des expéditions -->
     <div class="table-responsive">
