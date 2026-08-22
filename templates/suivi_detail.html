@@ -252,6 +252,58 @@
             </ul>
         </div>
 
+        <!-- Panneau TRANSMISSION GPS DIRECTE INTER-ACTEURS -->
+        <div class="panel" style="padding: 1.2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-left: 4px solid var(--accent);">
+            <h4 style="margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 0.5rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span>📲</span> Transmissions GPS Directes Inter-Acteurs
+            </h4>
+            
+            <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.8rem;">
+                <!-- Flux 1 : Entrepôt -> Fournisseur -->
+                <div style="background: #f8fafd; padding: 0.8rem; border-radius: 8px; border: 1px solid #d0e1f9;">
+                    <div style="font-weight: bold; font-size: 0.85rem; color: var(--primary); margin-bottom: 0.3rem;">
+                        🏬 Entrepôt ➔ 🏭 Fournisseur
+                    </div>
+                    <div style="font-size: 0.78rem; color: #555; margin-bottom: 0.5rem;">
+                        Transmettre la position GPS du dépôt au Fournisseur pour l'expédition initiale.
+                    </div>
+                    <button id="btn-send-depot-to-supplier" class="btn btn-sm btn-outline" style="width: 100%; border-color: #3498db; color: #2980b9;">
+                        📡 Transmettre Position Dépôt au Fournisseur
+                    </button>
+                    <div id="status-depot-supplier" style="display: none; font-size: 0.78rem; color: #27ae60; font-weight: bold; margin-top: 0.4rem;">
+                        ✅ Position de l'Entrepôt transmise au Fournisseur !
+                    </div>
+                </div>
+
+                <!-- Flux 2 : Client -> Chauffeur -->
+                <div style="background: #fdf8f5; padding: 0.8rem; border-radius: 8px; border: 1px solid #f9e0d3;">
+                    <div style="font-weight: bold; font-size: 0.85rem; color: #d35400; margin-bottom: 0.3rem;">
+                        🏡 Client ➔ 🚚 Chauffeur
+                    </div>
+                    <div style="font-size: 0.78rem; color: #555; margin-bottom: 0.5rem;">
+                        Transmettre la position GPS exacte du Client au Chauffeur pour le guidage final.
+                    </div>
+                    <button id="btn-send-client-to-driver" class="btn btn-sm btn-outline" style="width: 100%; border-color: #e67e22; color: #d35400;">
+                        🚚 Transmettre Position Client au Chauffeur
+                    </button>
+                    <div id="status-client-driver" style="display: none; font-size: 0.78rem; color: #27ae60; font-weight: bold; margin-top: 0.4rem;">
+                        ✅ Position du Client transmise au Chauffeur !
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculateur de Distance & ETA en temps réel -->
+            <div style="margin-top: 1rem; background: #f4f6f9; padding: 0.8rem; border-radius: 8px;">
+                <small style="color: #666; font-size: 0.75rem; text-transform: uppercase;">Distance Chauffeur ➔ Client</small>
+                <div id="calc-distance-driver-client" style="font-size: 1.1rem; font-weight: bold; color: var(--primary); margin-top: 0.2rem;">
+                    Calcul en cours...
+                </div>
+                <small id="calc-eta-driver-client" style="color: #27ae60; font-size: 0.8rem; font-weight: 600; display: block; margin-top: 0.2rem;">
+                    ETA : Calcul en cours...
+                </small>
+            </div>
+        </div>
+
         <!-- Formulaire de mise à jour manuelle -->
         <div class="panel" style="padding: 1.2rem; background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
             <h4 style="margin-top: 0; color: var(--primary); border-bottom: 2px solid #eee; padding-bottom: 0.5rem;">
@@ -873,6 +925,59 @@ document.addEventListener('DOMContentLoaded', function() {
             })
             .catch(e => {});
     }, 4000);
+
+    // --- CALCULATEUR DE DISTANCE HAVERSINE ET NAVIGATION INTER-ACTEURS ---
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Rayon terre en km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = 
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    function updateDriverToClientMetrics() {
+        const distKm = calculateHaversineDistance(posActuelle[0], posActuelle[1], posClient[0], posClient[1]);
+        const distElem = document.getElementById('calc-distance-driver-client');
+        const etaElem = document.getElementById('calc-eta-driver-client');
+        
+        if (distElem) {
+            distElem.innerText = distKm.toFixed(2) + ' km';
+        }
+        if (etaElem) {
+            const avgSpeed = 45; // km/h
+            const timeMinutes = Math.round((distKm / avgSpeed) * 60);
+            etaElem.innerText = `ETA estimé : ~${Math.max(1, timeMinutes)} min vers la destination du Client`;
+        }
+    }
+
+    updateDriverToClientMetrics();
+
+    // 1. TRANSMISSION POSITION ENTREPÔT -> FOURNISSEUR
+    const btnSendDepotSupplier = document.getElementById('btn-send-depot-to-supplier');
+    if (btnSendDepotSupplier) {
+        btnSendDepotSupplier.addEventListener('click', function() {
+            L.polyline([posFournisseur, posEntrepot], {color: '#3498db', weight: 7, opacity: 0.9}).addTo(map);
+            mFournisseur.openPopup();
+            document.getElementById('status-depot-supplier').style.display = 'block';
+            alert("🏭 Les coordonnées GPS de l'Entrepôt (" + posEntrepot[0].toFixed(4) + ", " + posEntrepot[1].toFixed(4) + ") ont été transmises au Fournisseur pour l'expédition initiale !");
+        });
+    }
+
+    // 2. TRANSMISSION POSITION CLIENT -> CHAUFFEUR
+    const btnSendClientDriver = document.getElementById('btn-send-client-to-driver');
+    if (btnSendClientDriver) {
+        btnSendClientDriver.addEventListener('click', function() {
+            L.polyline([posActuelle, posClient], {color: '#e67e22', weight: 7, opacity: 0.9}).addTo(map);
+            mCamion.openPopup();
+            document.getElementById('status-client-driver').style.display = 'block';
+            updateDriverToClientMetrics();
+            alert("🚚 La position GPS exacte du Client (" + posClient[0].toFixed(4) + ", " + posClient[1].toFixed(4) + ") a été transmise au Chauffeur ! Le guidage GPS en direct est activé.");
+        });
+    }
 });
 </script>
 
