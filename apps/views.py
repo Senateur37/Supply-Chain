@@ -1122,12 +1122,24 @@ def suivi_update_gps_api(request, pk):
         vitesse = float(data.get('vitesse', suivi.vitesse_kmh))
         progression = int(data.get('progression', suivi.progression_pct))
         nouveau_statut = data.get('statut', suivi.statut)
+        role = data.get('role', 'vehicule')
 
         ancien_statut = suivi.statut
-        suivi.lat_actuelle = lat
-        suivi.lng_actuelle = lng
-        suivi.vitesse_kmh = vitesse
-        suivi.progression_pct = min(100, max(0, progression))
+
+        if role == 'fournisseur':
+            suivi.lat_fournisseur = lat
+            suivi.lng_fournisseur = lng
+        elif role == 'entrepot':
+            suivi.lat_entrepot = lat
+            suivi.lng_entrepot = lng
+        elif role == 'client':
+            suivi.lat_client = lat
+            suivi.lng_client = lng
+        else:
+            suivi.lat_actuelle = lat
+            suivi.lng_actuelle = lng
+            suivi.vitesse_kmh = vitesse
+            suivi.progression_pct = min(100, max(0, progression))
 
         if nouveau_statut in dict(SuiviExpedition.STATUT_CHOICES):
             suivi.statut = nouveau_statut

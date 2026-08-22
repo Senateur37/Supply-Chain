@@ -130,6 +130,34 @@
         <!-- Conteneur Carte Leaflet (Taille explicite inline) -->
         <div id="gps-map" style="height: 500px; min-height: 500px; width: 100%; border-radius: 12px; z-index: 1; border: 1px solid #ddd;"></div>
 
+        <!-- Section PARTAGE DE POSITION GPS EN DIRECT (Smartphone / Appareil) -->
+        <div style="margin-top: 1rem; background: linear-gradient(135deg, #eef9f9, #e0f2f1); padding: 1rem 1.2rem; border-radius: 10px; border: 1px solid #b2dfdb;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <span style="font-size: 1.4rem;">📡</span>
+                    <div>
+                        <strong style="color: var(--primary); font-size: 0.95rem;">Partager ma position GPS physique en direct</strong>
+                        <div style="font-size: 0.8rem; color: #555;">Transmettez les coordonnées réelles de votre téléphone/PC sur la carte</div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                    <select id="user-role-select" class="form-control" style="width: auto; padding: 0.35rem 0.6rem; font-size: 0.85rem;">
+                        <option value="vehicule" selected>🚚 Je suis le Chauffeur / Véhicule</option>
+                        <option value="fournisseur">🏭 Je suis le Fournisseur (Origine)</option>
+                        <option value="client">🏡 Je suis le Client (Destination)</option>
+                    </select>
+                    <button id="btn-toggle-device-gps" class="btn btn-outline" style="border-color: var(--accent); color: var(--accent); display: flex; align-items: center; gap: 0.4rem; background: #fff;">
+                        <span id="device-gps-icon">📡</span> <span id="device-gps-label">Activer mon GPS Réel</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Banner statut du signal GPS de l'appareil -->
+            <div id="device-gps-status-banner" style="display: none; font-size: 0.85rem; padding: 0.5rem 0.8rem; background: #ffffff; border-radius: 6px; border-left: 4px solid #2ecc71; margin-top: 0.6rem; color: #333;">
+                <strong>🟢 Partage GPS actif :</strong> <span id="device-gps-info">Recherche du signal satellite...</span>
+            </div>
+        </div>
+
         <!-- Barre de Contrôles Dynamiques du Simulateur -->
         <div style="margin-top: 1rem; background: #f8f9fa; padding: 1rem; border-radius: 10px; border: 1px solid #eee;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem;">
@@ -533,7 +561,110 @@ document.addEventListener('DOMContentLoaded', function() {
     if (currentPct < 100 && currentPct > 0) {
         setTimeout(startSimulation, 800);
     }
+
+    // --- GÉOLOCALISATION APPAREIL / SMARTPHONE EN DIRECT (navigator.geolocation) ---
+    let watchGpsId = null;
+    let isSharingDeviceGps = false;
+    const btnToggleDeviceGps = document.getElementById('btn-toggle-device-gps');
+    const deviceGpsStatusBanner = document.getElementById('device-gps-status-banner');
+    const deviceGpsInfo = document.getElementById('device-gps-info');
+    const userRoleSelect = document.getElementById('user-role-select');
+
+    if (btnToggleDeviceGps) {
+        btnToggleDeviceGps.addEventListener('click', function() {
+            if (isSharingDeviceGps) {
+                stopDeviceGpsSharing();
+            } else {
+                startDeviceGpsSharing();
+            }
+        });
+    }
+
+    function startDeviceGpsSharing() {
+        if (!navigator.geolocation) {
+            alert("⚠️ La géolocalisation n'est pas supportée par votre navigateur ou appareil.");
+            return;
+        }
+
+        pauseSimulation(); // Arrêter le simulateur fictif s'il tourne
+        isSharingDeviceGps = true;
+        document.getElementById('device-gps-icon').innerText = '🔴';
+        document.getElementById('device-gps-label').innerText = 'Arrêter le GPS Réel';
+        btnToggleDeviceGps.style.background = '#ffebee';
+        btnToggleDeviceGps.style.color = '#c62828';
+        btnToggleDeviceGps.style.borderColor = '#ef9a9a';
+        deviceGpsStatusBanner.style.display = 'block';
+        deviceGpsInfo.innerText = 'Connexion aux satellites GPS de votre appareil...';
+
+        watchGpsId = navigator.geolocation.watchPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                const accuracy = position.coords.accuracy ? Math.round(position.coords.accuracy) : 0;
+                const speedKmh = position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) : 0;
+                const selectedRole = userRoleSelect.value;
+
+                deviceGpsInfo.innerHTML = `Position réelle active — Lat: <strong>${lat.toFixed(5)}</strong>, Lng: <strong>${lng.toFixed(5)}</strong> (Précision: ${accuracy}m, Vitesse: ${speedKmh} km/h)`;
+
+                // Transmettre les coordonnées à Django
+                fetch("{% url 'suivi_update_gps_api' suivi.pk %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        lat: lat,
+                        lng: lng,
+                        vitesse: speedKmh,
+                        role: selectedRole
+                    })
+                }).then(r => r.json()).then(data => {
+                    if (selectedRole === 'fournisseur') {
+                        mFournisseur.setLatLng([lat, lng]);
+                    } else if (selectedRole === 'client') {
+                        mClient.setLatLng([lat, lng]);
+                    } else {
+                        mCamion.setLatLng([lat, lng]);
+                        document.getElementById('tele-vitesse').innerText = speedKmh + ' km/h';
+                        document.getElementById('tele-coords').innerText = `📍 Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}`;
+                    }
+                    map.panTo([lat, lng], {animate: true});
+                }).catch(e => console.error("Erreur sync GPS appareil:", e));
+            },
+            function(error) {
+                console.error("Erreur Geolocation:", error);
+                let msg = "Impossible d'accéder au GPS réel de l'appareil.";
+                if (error.code === error.PERMISSION_DENIED) {
+                    msg = "Permission refusée. Veuillez autoriser l'accès GPS dans votre navigateur.";
+                }
+                deviceGpsInfo.innerText = "⚠️ " + msg;
+                stopDeviceGpsSharing();
+                alert(msg);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            }
+        );
+    }
+
+    function stopDeviceGpsSharing() {
+        if (watchGpsId !== null) {
+            navigator.geolocation.clearWatch(watchGpsId);
+            watchGpsId = null;
+        }
+        isSharingDeviceGps = false;
+        document.getElementById('device-gps-icon').innerText = '📡';
+        document.getElementById('device-gps-label').innerText = 'Activer mon GPS Réel';
+        btnToggleDeviceGps.style.background = '#fff';
+        btnToggleDeviceGps.style.color = 'var(--accent)';
+        btnToggleDeviceGps.style.borderColor = 'var(--accent)';
+        deviceGpsStatusBanner.style.display = 'none';
+    }
 });
 </script>
 
 {% endblock %}
+
