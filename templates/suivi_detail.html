@@ -130,6 +130,19 @@
         <!-- Conteneur Carte Leaflet (Taille explicite inline) -->
         <div id="gps-map" style="height: 500px; min-height: 500px; width: 100%; border-radius: 12px; z-index: 1; border: 1px solid #ddd;"></div>
 
+        <!-- Bannière d'information de position utilisateur détectée -->
+        <div id="user-location-detected-banner" style="display: none; margin-top: 0.8rem; background: #e8f8f5; border: 1px solid #a3e4d7; color: #0e6251; padding: 0.8rem 1rem; border-radius: 8px; font-size: 0.88rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div>
+                    <strong>👤 Votre position physique a été localisée sur la carte !</strong>
+                    <div id="user-location-text" style="font-size: 0.8rem; opacity: 0.9;">Recherche...</div>
+                </div>
+                <button id="btn-apply-user-location" class="btn btn-sm btn-success">
+                    🎯 Définir la position du camion à mon emplacement
+                </button>
+            </div>
+        </div>
+
         <!-- Section PARTAGE DE POSITION GPS EN DIRECT (Smartphone / Appareil) -->
         <div style="margin-top: 1rem; background: linear-gradient(135deg, #eef9f9, #e0f2f1); padding: 1rem 1.2rem; border-radius: 10px; border: 1px solid #b2dfdb;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 0.5rem;">
@@ -366,6 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const iconClient = createIcon('🏡', '#2ecc71');
     const iconCamion = createIcon('🚚', '#0EA5A4', true);
     const iconRemiseClient = createIcon('🤝', '#27ae60', true);
+    const iconUserPos = createIcon('👤', '#e74c3c', true);
 
     // Marqueurs fixes
     const mFournisseur = L.marker(posFournisseur, {icon: iconFournisseur}).addTo(map)
@@ -380,6 +394,89 @@ document.addEventListener('DOMContentLoaded', function() {
     // Marqueur Véhicule mobile
     const mCamion = L.marker(posActuelle, {icon: iconCamion}).addTo(map)
         .bindPopup('<b>Véhicule de Livraison GPS</b><br>Camion: {{ suivi.immatriculation_vehicule }}<br>Chauffeur: {{ suivi.nom_chauffeur }}');
+
+    // Marqueur Position Utilisateur (Votre emplacement physique)
+    let mUserPos = null;
+    let userDetectedCoords = null;
+
+    // --- DÉTECTION ET AFFICHAGE AUTOMATIQUE DE LA POSITION PHYSIQUE DE L'UTILISATEUR ---
+    function renderUserPositionMarker(lat, lng, labelText = "Position détectée") {
+        userDetectedCoords = [lat, lng];
+        if (mUserPos) {
+            mUserPos.setLatLng([lat, lng]);
+        } else {
+            mUserPos = L.marker([lat, lng], {icon: iconUserPos}).addTo(map)
+                .bindPopup(`<b>👤 Vous êtes ici !</b><br>Lat: ${lat.toFixed(5)}, Lng: ${lng.toFixed(5)}<br><small>${labelText}</small>`);
+        }
+        
+        const banner = document.getElementById('user-location-detected-banner');
+        if (banner) {
+            banner.style.display = 'block';
+            document.getElementById('user-location-text').innerHTML = `📍 Coordonnées : <strong>Lat ${lat.toFixed(5)}, Lng ${lng.toFixed(5)}</strong> (${labelText})`;
+        }
+    }
+
+    const btnApplyUserLocation = document.getElementById('btn-apply-user-location');
+    if (btnApplyUserLocation) {
+        btnApplyUserLocation.addEventListener('click', function() {
+            if (!userDetectedCoords) return;
+            const selectedRole = userRoleSelect ? userRoleSelect.value : 'vehicule';
+            
+            fetch("{% url 'suivi_update_gps_api' suivi.pk %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    lat: userDetectedCoords[0],
+                    lng: userDetectedCoords[1],
+                    vitesse: 50.0,
+                    role: selectedRole
+                })
+            }).then(r => r.json()).then(data => {
+                if (selectedRole === 'fournisseur') {
+                    mFournisseur.setLatLng(userDetectedCoords);
+                } else if (selectedRole === 'client') {
+                    mClient.setLatLng(userDetectedCoords);
+                } else {
+                    mCamion.setLatLng(userDetectedCoords);
+                    document.getElementById('tele-vitesse').innerText = '50 km/h';
+                    document.getElementById('tele-coords').innerText = `📍 Lat: ${userDetectedCoords[0].toFixed(5)}, Lng: ${userDetectedCoords[1].toFixed(5)}`;
+                }
+                map.panTo(userDetectedCoords, {animate: true});
+                alert("🎯 Position du camion/rôle mise à jour sur votre emplacement exact !");
+            });
+        });
+    }
+
+    // Essayer HTML5 Geolocation en premier
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                renderUserPositionMarker(pos.coords.latitude, pos.coords.longitude, "Signal GPS Satellite Réel");
+            },
+            function(err) {
+                console.log("GPS Satellite non disponible ou refusé, bascule sur la géolocalisation IP...");
+                fetchIPLocation();
+            },
+            { enableHighAccuracy: true, timeout: 8000 }
+        );
+    } else {
+        fetchIPLocation();
+    }
+
+    // Géolocalisation par IP de secours si l'autorisation GPS est refusée ou non HTTPS
+    function fetchIPLocation() {
+        fetch('https://ipapi.co/json/')
+            .then(r => r.json())
+            .then(data => {
+                if (data.latitude && data.longitude) {
+                    renderUserPositionMarker(data.latitude, data.longitude, `Localisé à ${data.city || 'Bamako'}, ${data.country_name || 'Mali'}`);
+                }
+            })
+            .catch(e => console.log("Géolocalisation IP indisponible"));
+    }
 
     // Lignes de polyline
     const lineSegment1 = L.polyline([posFournisseur, posEntrepot], {color: '#3498db', weight: 5, dashArray: '6, 8'}).addTo(map);
